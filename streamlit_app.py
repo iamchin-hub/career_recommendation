@@ -133,14 +133,22 @@ st.markdown(
         align-items: center;
         gap: .45rem;
       }
-      .nav-pills a {
+      .nav-pills form,
+      .hero-actions form {
+        margin: 0;
+      }
+      .nav-pills button {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        font: inherit;
         color: #d8e3f4 !important;
-        text-decoration: none;
         padding: .48rem .78rem;
         border-radius: 9px;
         font-size: .83rem;
       }
-      .nav-pills a:hover {background: rgba(255,255,255,.07);}
+      .nav-pills button:hover {background: rgba(255,255,255,.07);}
       .nav-pills .nav-cta {
         border: 1px solid rgba(255,255,255,.62);
         color: white !important;
@@ -195,7 +203,10 @@ st.markdown(
         gap: .7rem;
         margin-top: 1.8rem;
       }
-      .hero-actions a {
+      .hero-actions button {
+        appearance: none;
+        cursor: pointer;
+        font: inherit;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -589,6 +600,17 @@ def render_recommendation(result: dict, rank: int) -> None:
         st.warning(credential["caveat"])
 
 
+MAIN_SECTIONS = {
+    "career": "Build my profile",
+    "method": "How it works",
+    "evidence": "Evidence library",
+}
+requested_section = str(st.query_params.get("section", "")).lower()
+active_tab_label = MAIN_SECTIONS.get(
+    requested_section,
+    MAIN_SECTIONS["career"],
+)
+
 st.markdown(
     """
     <nav class="topbar">
@@ -597,67 +619,89 @@ st.markdown(
         <span>Hakbang PH</span>
       </div>
       <div class="nav-pills">
-        <a href="#career-scan">Career scan</a>
-        <a href="#how-it-works">Method</a>
-        <a href="#evidence-library">Evidence</a>
-        <a class="nav-cta" href="#career-scan">Find my next move →</a>
+        <form action="" method="get">
+          <input type="hidden" name="section" value="career"/>
+          <button type="submit">Career scan</button>
+        </form>
+        <form action="" method="get">
+          <input type="hidden" name="section" value="method"/>
+          <button type="submit">Method</button>
+        </form>
+        <form action="" method="get">
+          <input type="hidden" name="section" value="evidence"/>
+          <button type="submit">Evidence</button>
+        </form>
+        <form action="" method="get">
+          <input type="hidden" name="section" value="career"/>
+          <button class="nav-cta" type="submit">Find my next move →</button>
+        </form>
       </div>
     </nav>
-    <section class="hero">
-      <div class="hero-copy">
-        <div class="hero-kicker">Career intelligence for Filipino professionals</div>
-        <h1>Your next move.<br/>Built for the AI era.</h1>
-        <p>
-          Turn your current job, industry experience, and transferable skills
-          into three evidence-linked career hypotheses—with an AI opportunity,
-          a practical portfolio proof, and an official credential to investigate.
-        </p>
-        <div class="hero-actions">
-          <a class="hero-primary" href="#career-scan">Start my career scan →</a>
-          <a class="hero-secondary" href="#how-it-works">See how it works</a>
-        </div>
-      </div>
-      <div class="hero-visual" aria-hidden="true">
-        <div class="machine-glow"></div>
-        <div class="orbit orbit-a"></div>
-        <div class="orbit orbit-b"></div>
-        <div class="orbit orbit-c"></div>
-        <div class="track track-a"></div>
-        <div class="track track-b"></div>
-        <div class="track track-c"></div>
-        <div class="machine-core">YOU</div>
-        <div class="signal-card signal-one">AI opportunity ↗</div>
-        <div class="signal-card signal-two">Skills → proof</div>
-        <div class="signal-card signal-three">What could be next?</div>
-      </div>
-    </section>
-    <section class="proof-strip">
-      <div class="proof-quote">
-        <strong>Explore. Verify. Build.</strong>
-        <span>A decision aid—not a career guarantee.</span>
-      </div>
-      <div class="proof-chip">1,000 synthetic<br/>learning profiles</div>
-      <div class="proof-chip">10 career<br/>pathways</div>
-      <div class="proof-chip">Research + official<br/>credential links</div>
-    </section>
-    """,
-    unsafe_allow_html=True,
-)
-st.markdown(
-    """
-    <div class="truth-note">
-      <strong>Research prototype:</strong> the model now learns from 1,000
-      diverse—but still synthetic—profiles. More simulated rows make the
-      patterns less repetitive; they do not create real-world evidence or prove
-      career outcomes. Do not use these results for hiring, promotion,
-      redundancy, compensation, or another high-impact decision.
-    </div>
     """,
     unsafe_allow_html=True,
 )
 
+if not requested_section:
+    st.markdown(
+        """
+        <section class="hero">
+          <div class="hero-copy">
+            <div class="hero-kicker">Career intelligence for Filipino professionals</div>
+            <h1>Your next move.<br/>Built for the AI era.</h1>
+            <p>
+              Turn your current job, industry experience, and transferable skills
+              into three evidence-linked career hypotheses—with an AI opportunity,
+              a practical portfolio proof, and an official credential to investigate.
+            </p>
+            <div class="hero-actions">
+              <form action="" method="get">
+                <input type="hidden" name="section" value="career"/>
+                <button class="hero-primary" type="submit">Start my career scan →</button>
+              </form>
+              <form action="" method="get">
+                <input type="hidden" name="section" value="method"/>
+                <button class="hero-secondary" type="submit">See how it works</button>
+              </form>
+            </div>
+          </div>
+          <div class="hero-visual" aria-hidden="true">
+            <div class="machine-glow"></div>
+            <div class="orbit orbit-a"></div>
+            <div class="orbit orbit-b"></div>
+            <div class="orbit orbit-c"></div>
+            <div class="track track-a"></div>
+            <div class="track track-b"></div>
+            <div class="track track-c"></div>
+            <div class="machine-core">YOU</div>
+            <div class="signal-card signal-one">AI opportunity ↗</div>
+            <div class="signal-card signal-two">Skills → proof</div>
+            <div class="signal-card signal-three">What could be next?</div>
+          </div>
+        </section>
+        <section class="proof-strip">
+          <div class="proof-quote">
+            <strong>Explore. Verify. Build.</strong>
+            <span>A decision aid—not a career guarantee.</span>
+          </div>
+          <div class="proof-chip">1,000 synthetic<br/>learning profiles</div>
+          <div class="proof-chip">10 career<br/>pathways</div>
+          <div class="proof-chip">Research + official<br/>credential links</div>
+        </section>
+        <div class="truth-note">
+          <strong>Research prototype:</strong> the model now learns from 1,000
+          diverse—but still synthetic—profiles. More simulated rows make the
+          patterns less repetitive; they do not create real-world evidence or prove
+          career outcomes. Do not use these results for hiring, promotion,
+          redundancy, compensation, or another high-impact decision.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 input_tab, method_tab, evidence_tab = st.tabs(
-    ["Build my profile", "How it works", "Evidence library"]
+    ["Build my profile", "How it works", "Evidence library"],
+    default=active_tab_label,
+    key=f"main-section-{requested_section or 'landing'}",
 )
 
 engine = load_engine()
