@@ -359,16 +359,23 @@ st.markdown(
         font-weight: 750;
       }
       div[role="tablist"] {
-        gap: .3rem;
+        gap: .65rem;
         background: rgba(11,18,32,.72);
         border: 1px solid var(--line);
         border-radius: 13px;
-        padding: .3rem;
+        padding: .45rem .6rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: thin;
       }
       [data-testid="stTab"] {
+        flex: 0 0 auto !important;
+        min-width: max-content !important;
+        padding: .55rem 1rem !important;
         border-radius: 9px;
         color: #ffffff !important;
         background-color: transparent !important;
+        white-space: nowrap !important;
         transition: background-color .16s ease, color .16s ease;
       }
       .stApp [data-testid="stTab"] p,
@@ -377,12 +384,12 @@ st.markdown(
         opacity: 1 !important;
       }
       .stApp [data-testid="stTab"][aria-selected="true"] {
-        color: #050914 !important;
-        background-color: #ffffff !important;
+        color: #ffffff !important;
+        background-color: transparent !important;
       }
       .stApp [data-testid="stTab"][aria-selected="true"] p,
       .stApp [data-testid="stTab"][aria-selected="true"] span {
-        color: #050914 !important;
+        color: #ffffff !important;
       }
       .stApp [data-testid="stTab"]:hover,
       .stApp [data-testid="stTab"][aria-selected="true"]:hover {
