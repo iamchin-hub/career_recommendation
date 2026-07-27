@@ -86,6 +86,12 @@ st.markdown(
         color: #596579 !important;
         opacity: 1 !important;
       }
+      .stApp [data-testid="stTooltipIcon"] button,
+      .stApp [data-testid="stTooltipIcon"] svg {
+        color: #ffffff !important;
+        stroke: currentColor !important;
+        opacity: 1 !important;
+      }
       [data-testid="stHeader"] {background: transparent;}
       [data-testid="stToolbar"] {right: 1rem;}
       .block-container {
@@ -668,8 +674,8 @@ with input_tab:
         with title_col:
             current_job_title = st.text_input(
                 "Current job title",
-                value="Customer Service Representative",
-                placeholder="Example: Finance Analyst or Team Leader",
+                value="",
+                placeholder="",
                 help=(
                     "The model uses words in your job title together with the "
                     "closest role family selected beside it."
@@ -679,6 +685,8 @@ with input_tab:
             current_role = st.selectbox(
                 "Closest current-role family",
                 options=list(CURRENT_ROLES),
+                index=None,
+                placeholder="",
                 format_func=lambda role: CURRENT_ROLES[role]["label"],
                 help=(
                     "Choose the family that best represents your present work, "
@@ -691,6 +699,8 @@ with input_tab:
             industry = st.selectbox(
                 "Current industry",
                 options=list(INDUSTRIES),
+                index=None,
+                placeholder="",
                 format_func=INDUSTRIES.get,
             )
         with experience_col:
@@ -698,7 +708,7 @@ with input_tab:
                 "Total years of work experience",
                 min_value=0.0,
                 max_value=50.0,
-                value=5.0,
+                value=0.0,
                 step=0.5,
             )
         with leadership_col:
@@ -706,13 +716,15 @@ with input_tab:
                 "Years leading people or major work",
                 min_value=0.0,
                 max_value=50.0,
-                value=1.0,
+                value=0.0,
                 step=0.5,
             )
         with goal_col:
             goal = st.selectbox(
                 "Main career goal",
                 options=list(CAREER_GOALS),
+                index=None,
+                placeholder="",
                 format_func=CAREER_GOALS.get,
             )
 
@@ -742,20 +754,39 @@ with input_tab:
     )
 
     if submitted:
-        profile = {
-            "current_industry": industry,
-            "current_role": current_role,
-            "current_job_title": current_job_title.strip(),
-            "years_experience": years_experience,
-            "leadership_years": leadership_years,
-            "goal": goal,
-            **skill_values,
-        }
-        try:
-            st.session_state["recommendations"] = engine.recommend(profile)
-            st.session_state["profile"] = profile
-        except ValueError as error:
-            st.error(str(error))
+        missing_fields = [
+            label
+            for label, value in (
+                ("Current job title", current_job_title.strip()),
+                ("Closest current-role family", current_role),
+                ("Current industry", industry),
+                ("Main career goal", goal),
+            )
+            if value in (None, "")
+        ]
+        if missing_fields:
+            st.session_state.pop("recommendations", None)
+            st.session_state.pop("profile", None)
+            st.error(
+                "Complete these required fields before requesting recommendations: "
+                + ", ".join(missing_fields)
+                + "."
+            )
+        else:
+            profile = {
+                "current_industry": industry,
+                "current_role": current_role,
+                "current_job_title": current_job_title.strip(),
+                "years_experience": years_experience,
+                "leadership_years": leadership_years,
+                "goal": goal,
+                **skill_values,
+            }
+            try:
+                st.session_state["recommendations"] = engine.recommend(profile)
+                st.session_state["profile"] = profile
+            except ValueError as error:
+                st.error(str(error))
 
     if "recommendations" in st.session_state:
         st.divider()
