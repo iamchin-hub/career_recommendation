@@ -1,7 +1,7 @@
 """Explainable career recommendation engine for the Hakbang PH Streamlit app.
 
-The model is trained only on 100 deterministic synthetic profiles. Its output is
-a comparative exploration aid, not a hiring probability or employment forecast.
+The model is trained only on 1,000 deterministic synthetic profiles. Its output
+is a comparative exploration aid, not a hiring probability or employment forecast.
 All research and credential text comes from the fixed, source-linked registry
 below; no generative AI is used at runtime.
 """
@@ -16,12 +16,17 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 
 SEED = 20260725
-DATASET_VERSION = "PH-COLAB-SYN-2026.07.27"
+SYNTHETIC_PROFILES_PER_CAREER = 100
+DATASET_VERSION = "PH-STREAMLIT-SYN-1000-2026.07.27"
 EVIDENCE_CHECKED = "27 July 2026"
+MODEL_NAME = "Logistic Regression"
+SYNTHETIC_CV_MACRO_F1 = 0.8462
+SYNTHETIC_CV_ACCURACY = 0.8470
 
 INDUSTRIES = {
     "it_bpo": "IT–BPM / BPO",
@@ -34,6 +39,209 @@ INDUSTRIES = {
     "tourism_hospitality": "Tourism & hospitality",
     "professional_services": "Professional services",
     "other": "Other industry",
+}
+
+CURRENT_ROLES = {
+    "customer_service": {
+        "label": "Customer service / contact center",
+        "titles": [
+            "Customer Service Representative",
+            "Contact Center Agent",
+            "Customer Support Specialist",
+            "Technical Support Representative",
+            "Client Services Associate",
+        ],
+    },
+    "team_lead_supervisor": {
+        "label": "Team leader / supervisor",
+        "titles": [
+            "Team Leader",
+            "Operations Supervisor",
+            "Customer Service Supervisor",
+            "Shift Supervisor",
+            "Unit Supervisor",
+        ],
+    },
+    "admin_operations": {
+        "label": "Administration / operations coordination",
+        "titles": [
+            "Administrative Officer",
+            "Operations Coordinator",
+            "Office Administrator",
+            "Business Support Specialist",
+            "Operations Associate",
+        ],
+    },
+    "data_reporting": {
+        "label": "Data, reporting, or business analysis",
+        "titles": [
+            "Data Analyst",
+            "Reporting Analyst",
+            "Business Analyst",
+            "Management Information Analyst",
+            "Business Intelligence Analyst",
+        ],
+    },
+    "software_it_support": {
+        "label": "Software development / IT support",
+        "titles": [
+            "Software Developer",
+            "Application Support Analyst",
+            "IT Support Specialist",
+            "Systems Support Engineer",
+            "Technical Support Engineer",
+        ],
+    },
+    "network_systems": {
+        "label": "Network, systems, or cloud administration",
+        "titles": [
+            "Network Administrator",
+            "Systems Administrator",
+            "Cloud Support Engineer",
+            "Infrastructure Engineer",
+            "Platform Operations Analyst",
+        ],
+    },
+    "cyber_compliance": {
+        "label": "Cybersecurity, risk, or compliance",
+        "titles": [
+            "Security Operations Analyst",
+            "Information Security Analyst",
+            "Risk and Compliance Analyst",
+            "IT Auditor",
+            "Governance Risk and Compliance Associate",
+        ],
+    },
+    "project_coordination": {
+        "label": "Project or program coordination",
+        "titles": [
+            "Project Coordinator",
+            "Project Officer",
+            "Program Coordinator",
+            "PMO Analyst",
+            "Scrum Master",
+        ],
+    },
+    "marketing_content": {
+        "label": "Marketing, content, or communications",
+        "titles": [
+            "Marketing Specialist",
+            "Digital Marketing Associate",
+            "Content Strategist",
+            "Social Media Specialist",
+            "Communications Officer",
+        ],
+    },
+    "sales_business": {
+        "label": "Sales / business development",
+        "titles": [
+            "Account Executive",
+            "Sales Specialist",
+            "Business Development Officer",
+            "Relationship Manager",
+            "Key Account Associate",
+        ],
+    },
+    "hr_recruitment": {
+        "label": "Human resources / recruitment",
+        "titles": [
+            "HR Generalist",
+            "Recruitment Specialist",
+            "Talent Acquisition Associate",
+            "HR Business Partner",
+            "Learning and Development Specialist",
+        ],
+    },
+    "accounting": {
+        "label": "Accounting / bookkeeping",
+        "titles": [
+            "Accountant",
+            "Bookkeeper",
+            "Accounts Payable Analyst",
+            "General Ledger Accountant",
+            "Audit Associate",
+        ],
+    },
+    "finance_planning": {
+        "label": "Finance, budgeting, or planning",
+        "titles": [
+            "Financial Analyst",
+            "Budget Analyst",
+            "Planning Analyst",
+            "Commercial Finance Analyst",
+            "Management Accountant",
+        ],
+    },
+    "supply_logistics": {
+        "label": "Supply chain / logistics",
+        "titles": [
+            "Supply Chain Coordinator",
+            "Logistics Analyst",
+            "Inventory Planner",
+            "Demand Planner",
+            "Warehouse Operations Analyst",
+        ],
+    },
+    "quality_process": {
+        "label": "Quality / process improvement",
+        "titles": [
+            "Quality Analyst",
+            "Process Improvement Specialist",
+            "Continuous Improvement Analyst",
+            "Quality Assurance Specialist",
+            "Business Process Analyst",
+        ],
+    },
+    "product_ux_design": {
+        "label": "Product, UX, or design",
+        "titles": [
+            "UX Researcher",
+            "UX Designer",
+            "Product Designer",
+            "Product Analyst",
+            "Service Designer",
+        ],
+    },
+    "education_training": {
+        "label": "Education / professional training",
+        "titles": [
+            "Teacher",
+            "Corporate Trainer",
+            "Instructional Designer",
+            "Learning Facilitator",
+            "Training Specialist",
+        ],
+    },
+    "healthcare_services": {
+        "label": "Healthcare / health administration",
+        "titles": [
+            "Healthcare Administrator",
+            "Medical Services Coordinator",
+            "Clinical Data Associate",
+            "Healthcare Support Specialist",
+            "Patient Services Officer",
+        ],
+    },
+    "hospitality_tourism": {
+        "label": "Hospitality / tourism",
+        "titles": [
+            "Hotel Operations Associate",
+            "Guest Services Officer",
+            "Travel Consultant",
+            "Tourism Officer",
+            "Restaurant Supervisor",
+        ],
+    },
+    "other": {
+        "label": "Another role family",
+        "titles": [
+            "Business Associate",
+            "Professional Services Associate",
+            "Program Assistant",
+            "Specialist",
+            "Consultant",
+        ],
+    },
 }
 
 SKILLS = {
@@ -80,7 +288,8 @@ NUMERIC_FEATURES = [
     "leadership_years",
     *SKILLS.keys(),
 ]
-CATEGORICAL_FEATURES = ["current_industry"]
+TEXT_FEATURE = "current_job_title"
+CATEGORICAL_FEATURES = ["current_industry", "current_role"]
 CAREER_GOALS = {
     "future_ready": "Build skills for an AI-shaped future",
     "leadership": "Move toward leadership",
@@ -884,6 +1093,11 @@ PROTOTYPES = {
             "retail_ecommerce",
             "professional_services",
         ],
+        "current_roles": [
+            "data_reporting",
+            "admin_operations",
+            "quality_process",
+        ],
         "experience": 4.5,
         "leadership": 0.8,
         "skills": [0.92, 0.78, 0.66, 0.53, 0.34, 0.56, 0.31, 0.52, 0.48],
@@ -894,6 +1108,11 @@ PROTOTYPES = {
             "financial_services",
             "government_public",
             "professional_services",
+        ],
+        "current_roles": [
+            "cyber_compliance",
+            "software_it_support",
+            "network_systems",
         ],
         "experience": 5.0,
         "leadership": 0.7,
@@ -906,6 +1125,11 @@ PROTOTYPES = {
             "professional_services",
             "retail_ecommerce",
         ],
+        "current_roles": [
+            "network_systems",
+            "software_it_support",
+            "project_coordination",
+        ],
         "experience": 5.5,
         "leadership": 1.0,
         "skills": [0.66, 0.97, 0.66, 0.68, 0.25, 0.28, 0.20, 0.63, 0.42],
@@ -916,6 +1140,12 @@ PROTOTYPES = {
             "it_bpo",
             "manufacturing_logistics",
             "government_public",
+        ],
+        "current_roles": [
+            "project_coordination",
+            "team_lead_supervisor",
+            "admin_operations",
+            "quality_process",
         ],
         "experience": 8.0,
         "leadership": 3.5,
@@ -928,6 +1158,11 @@ PROTOTYPES = {
             "tourism_hospitality",
             "professional_services",
         ],
+        "current_roles": [
+            "marketing_content",
+            "sales_business",
+            "customer_service",
+        ],
         "experience": 4.5,
         "leadership": 1.0,
         "skills": [0.72, 0.62, 0.88, 0.61, 0.96, 0.35, 0.28, 0.42, 0.82],
@@ -938,6 +1173,11 @@ PROTOTYPES = {
             "professional_services",
             "financial_services",
             "healthcare",
+        ],
+        "current_roles": [
+            "hr_recruitment",
+            "data_reporting",
+            "team_lead_supervisor",
         ],
         "experience": 5.5,
         "leadership": 1.2,
@@ -950,6 +1190,11 @@ PROTOTYPES = {
             "professional_services",
             "other",
         ],
+        "current_roles": [
+            "supply_logistics",
+            "admin_operations",
+            "quality_process",
+        ],
         "experience": 5.0,
         "leadership": 1.0,
         "skills": [0.84, 0.57, 0.68, 0.66, 0.27, 0.51, 0.26, 0.97, 0.56],
@@ -960,6 +1205,11 @@ PROTOTYPES = {
             "professional_services",
             "retail_ecommerce",
             "manufacturing_logistics",
+        ],
+        "current_roles": [
+            "finance_planning",
+            "accounting",
+            "data_reporting",
         ],
         "experience": 5.5,
         "leadership": 1.0,
@@ -972,6 +1222,12 @@ PROTOTYPES = {
             "tourism_hospitality",
             "financial_services",
         ],
+        "current_roles": [
+            "customer_service",
+            "team_lead_supervisor",
+            "sales_business",
+            "hospitality_tourism",
+        ],
         "experience": 7.0,
         "leadership": 3.0,
         "skills": [0.52, 0.51, 0.95, 0.78, 0.50, 0.37, 0.55, 0.65, 0.98],
@@ -982,6 +1238,11 @@ PROTOTYPES = {
             "retail_ecommerce",
             "professional_services",
             "education",
+        ],
+        "current_roles": [
+            "product_ux_design",
+            "marketing_content",
+            "education_training",
         ],
         "experience": 4.5,
         "leadership": 0.8,
@@ -996,45 +1257,84 @@ def _clip_rating(value: float) -> int:
 
 def generate_synthetic_profiles(
     seed: int = SEED,
-    per_career: int = 10,
+    per_career: int = SYNTHETIC_PROFILES_PER_CAREER,
 ) -> pd.DataFrame:
-    """Generate exactly 100 rows with the same documented rules as the notebook."""
+    """Generate a larger, overlapping teaching set from documented assumptions."""
 
     rng = np.random.default_rng(seed)
     rows: list[dict[str, Any]] = []
     profile_number = 1
+    career_ids = list(PROTOTYPES)
+    role_ids = list(CURRENT_ROLES)
 
-    for career_id, prototype in PROTOTYPES.items():
+    for career_index, (career_id, prototype) in enumerate(PROTOTYPES.items()):
+        adjacent = PROTOTYPES[career_ids[(career_index + 1) % len(career_ids)]]
         for _ in range(per_career):
             industry = (
                 rng.choice(prototype["industries"])
-                if rng.random() < 0.82
+                if rng.random() < 0.76
                 else rng.choice(list(INDUSTRIES))
             )
+            role_draw = rng.random()
+            if role_draw < 0.76:
+                current_role = str(rng.choice(prototype["current_roles"]))
+            elif role_draw < 0.92:
+                current_role = str(rng.choice(adjacent["current_roles"]))
+            else:
+                current_role = str(rng.choice(role_ids))
+            current_job_title = str(
+                rng.choice(CURRENT_ROLES[current_role]["titles"])
+            )
+
+            # A minority of profiles blend with a neighboring pathway. This
+            # creates more realistic overlap than ten perfectly separated clusters.
+            blend = float(rng.uniform(0.08, 0.28)) if rng.random() < 0.30 else 0.0
+            experience_center = (
+                prototype["experience"] * (1 - blend)
+                + adjacent["experience"] * blend
+            )
+            leadership_center = (
+                prototype["leadership"] * (1 - blend)
+                + adjacent["leadership"] * blend
+            )
             years = float(
-                np.clip(rng.normal(prototype["experience"], 1.8), 0, 20)
+                np.clip(rng.normal(experience_center, 2.0), 0, 25)
             )
             leadership = float(
                 np.clip(
-                    rng.normal(prototype["leadership"], 0.9),
+                    rng.normal(leadership_center, 1.0),
                     0,
-                    min(12, years),
+                    min(15, years),
                 )
             )
             row: dict[str, Any] = {
                 "profile_id": f"PH-{profile_number:03d}",
                 "current_industry": str(industry),
+                "current_role": current_role,
+                "current_job_title": current_job_title,
                 "years_experience": round(years, 1),
                 "leadership_years": round(leadership, 1),
             }
-            for skill, center in zip(SKILLS, prototype["skills"]):
-                row[skill] = _clip_rating(1 + 4 * center + rng.normal(0, 0.48))
+            for skill_index, (skill, center) in enumerate(
+                zip(SKILLS, prototype["skills"])
+            ):
+                mixed_center = (
+                    center * (1 - blend)
+                    + adjacent["skills"][skill_index] * blend
+                )
+                row[skill] = _clip_rating(
+                    1 + 4 * mixed_center + rng.normal(0, 0.58)
+                )
             row["recommended_career"] = career_id
             rows.append(row)
             profile_number += 1
 
     frame = pd.DataFrame(rows)
-    if len(frame) != 100 or not frame["recommended_career"].value_counts().eq(10).all():
+    expected_rows = len(PROTOTYPES) * per_career
+    if (
+        len(frame) != expected_rows
+        or not frame["recommended_career"].value_counts().eq(per_career).all()
+    ):
         raise RuntimeError("Synthetic data integrity check failed.")
     return frame
 
@@ -1058,6 +1358,16 @@ class CareerEngine:
             transformers=[
                 ("numeric", StandardScaler(), NUMERIC_FEATURES),
                 ("industry", _one_hot_encoder(), CATEGORICAL_FEATURES),
+                (
+                    "job_title",
+                    TfidfVectorizer(
+                        lowercase=True,
+                        ngram_range=(1, 2),
+                        min_df=2,
+                        strip_accents="unicode",
+                    ),
+                    TEXT_FEATURE,
+                ),
             ],
             remainder="drop",
         )
@@ -1074,7 +1384,9 @@ class CareerEngine:
                 ),
             ]
         )
-        features = profiles[CATEGORICAL_FEATURES + NUMERIC_FEATURES]
+        features = profiles[
+            CATEGORICAL_FEATURES + NUMERIC_FEATURES + [TEXT_FEATURE]
+        ]
         model.fit(features, profiles["recommended_career"])
         return cls(model=model, synthetic_profiles=profiles)
 
@@ -1085,7 +1397,7 @@ class CareerEngine:
     ) -> list[dict[str, Any]]:
         validate_profile(profile)
         input_frame = pd.DataFrame([profile])[
-            CATEGORICAL_FEATURES + NUMERIC_FEATURES
+            CATEGORICAL_FEATURES + NUMERIC_FEATURES + [TEXT_FEATURE]
         ]
         probabilities = self.model.predict_proba(input_frame)[0]
         class_ids = self.model.named_steps["model"].classes_
@@ -1112,6 +1424,12 @@ class CareerEngine:
                 if profile["current_industry"] in career["preferred_industries"]
                 else 0.55
             )
+            role_fit = (
+                1.0
+                if profile["current_role"]
+                in PROTOTYPES[str(career_id)]["current_roles"]
+                else 0.35
+            )
 
             goal_adjustment = 0.0
             if (
@@ -1119,23 +1437,24 @@ class CareerEngine:
                 and career_id
                 in {"project_manager", "customer_experience_manager"}
             ):
-                goal_adjustment = 0.04
+                goal_adjustment = 0.03
             elif profile["goal"] == "future_ready":
                 goal_adjustment = max(
                     0.0,
                     future["score"] - current["score"],
-                ) * 0.04
+                ) * 0.03
             elif profile["goal"] == "sector_switch" and industry_fit < 1:
-                goal_adjustment = future["score"] * 0.04
+                goal_adjustment = future["score"] * 0.03
 
             score = 100 * min(
                 1.0,
-                0.38 * float(model_probability)
-                + 0.24 * float(skill_fit)
-                + 0.08 * experience_fit
-                + 0.08 * current["score"]
-                + 0.12 * future["score"]
-                + 0.06 * industry_fit
+                0.42 * float(model_probability)
+                + 0.20 * float(skill_fit)
+                + 0.05 * experience_fit
+                + 0.14 * role_fit
+                + 0.05 * current["score"]
+                + 0.07 * future["score"]
+                + 0.04 * industry_fit
                 + goal_adjustment,
             )
             results.append(
@@ -1151,6 +1470,7 @@ class CareerEngine:
                     "skill_fit": round(100 * float(skill_fit), 1),
                     "experience_fit": round(100 * experience_fit, 1),
                     "industry_fit": round(100 * industry_fit, 1),
+                    "role_fit": round(100 * role_fit, 1),
                     "skill_gaps": skill_gaps_for(profile, str(career_id)),
                     **career,
                 }
@@ -1167,12 +1487,16 @@ class CareerEngine:
 
 
 def validate_profile(profile: dict[str, Any]) -> None:
-    expected = CATEGORICAL_FEATURES + NUMERIC_FEATURES + ["goal"]
+    expected = CATEGORICAL_FEATURES + NUMERIC_FEATURES + [TEXT_FEATURE, "goal"]
     missing = [field for field in expected if field not in profile]
     if missing:
         raise ValueError(f"Missing profile fields: {', '.join(missing)}")
     if profile["current_industry"] not in INDUSTRIES:
         raise ValueError("Please select a listed industry.")
+    if profile["current_role"] not in CURRENT_ROLES:
+        raise ValueError("Please select a listed current-role family.")
+    if len(str(profile["current_job_title"]).strip()) < 2:
+        raise ValueError("Please enter your current job title.")
     if profile["goal"] not in CAREER_GOALS:
         raise ValueError("Please select a listed career goal.")
     years = float(profile["years_experience"])
@@ -1213,4 +1537,3 @@ def skill_gaps_for(
         if target - float(profile[skill]) > 0
     ]
     return sorted(gaps, key=lambda item: item["gap"], reverse=True)[:limit]
-

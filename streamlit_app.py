@@ -8,11 +8,16 @@ import streamlit as st
 
 from career_engine import (
     CAREER_GOALS,
+    CURRENT_ROLES,
     DATASET_VERSION,
     EVIDENCE_CHECKED,
     INDUSTRIES,
+    MODEL_NAME,
     SKILLS,
     SOURCES,
+    SYNTHETIC_CV_ACCURACY,
+    SYNTHETIC_CV_MACRO_F1,
+    SYNTHETIC_PROFILES_PER_CAREER,
     CareerEngine,
 )
 
@@ -28,30 +33,101 @@ st.markdown(
     """
     <style>
       :root {
-        --ink: #17322e;
-        --green: #0b6e69;
-        --green-dark: #07514d;
-        --mint: #eaf6f2;
-        --cream: #fffaf0;
-        --gold: #e5983e;
+        --night: #030713;
+        --panel: #111827;
+        --panel-soft: #182235;
+        --line: rgba(151, 172, 214, .22);
+        --text: #f7f8fb;
+        --muted: #aab7cc;
+        --blue: #52a8ff;
+        --blue-deep: #246bfe;
+        --orange: #ff6b2c;
+        --gold: #ffbd35;
       }
       .stApp {
         background:
-          radial-gradient(circle at 90% 4%, rgba(229,152,62,.13), transparent 24rem),
-          linear-gradient(180deg, #fbfdfb 0%, #f5faf7 48%, #fffaf3 100%);
-        color: var(--ink);
+          radial-gradient(circle at 78% 3%, rgba(34, 107, 254, .35), transparent 27rem),
+          radial-gradient(circle at 10% 40%, rgba(12, 49, 118, .24), transparent 30rem),
+          linear-gradient(180deg, #030713 0%, #071022 54%, #050914 100%);
+        color: var(--text);
       }
-      .block-container {max-width: 1120px; padding-top: 2rem; padding-bottom: 4rem;}
-      .hero {
-        padding: 2.2rem 2.3rem;
-        border-radius: 28px;
-        background: linear-gradient(125deg, #073f3b 0%, #0b6e69 68%, #16928a 100%);
-        box-shadow: 0 20px 55px rgba(7,63,59,.16);
+      [data-testid="stHeader"] {background: transparent;}
+      [data-testid="stToolbar"] {right: 1rem;}
+      .block-container {
+        max-width: 1180px;
+        padding-top: 1.15rem;
+        padding-bottom: 5rem;
+      }
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: .7rem .85rem .7rem 1rem;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(15, 22, 37, .76);
+        backdrop-filter: blur(18px);
+        margin-bottom: 1rem;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
         color: white;
-        margin-bottom: 1.2rem;
+        font-weight: 850;
+        letter-spacing: -.02em;
+      }
+      .brand-mark {
+        display: inline-grid;
+        place-items: center;
+        width: 31px;
+        height: 31px;
+        border-radius: 9px;
+        color: #04101f;
+        background: linear-gradient(135deg, #fff 0%, #9fd0ff 100%);
+        box-shadow: 0 0 30px rgba(82, 168, 255, .42);
+      }
+      .nav-pills {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+      }
+      .nav-pills a {
+        color: #d8e3f4 !important;
+        text-decoration: none;
+        padding: .48rem .78rem;
+        border-radius: 9px;
+        font-size: .83rem;
+      }
+      .nav-pills a:hover {background: rgba(255,255,255,.07);}
+      .nav-pills .nav-cta {
+        border: 1px solid rgba(255,255,255,.62);
+        color: white !important;
+        padding-inline: 1rem;
+      }
+      .hero {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1.04fr) minmax(320px, .96fr);
+        min-height: 500px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 28px 28px 0 0;
+        background:
+          radial-gradient(circle at 76% 35%, rgba(45, 120, 255, .58), transparent 28%),
+          radial-gradient(circle at 82% 58%, rgba(17, 75, 181, .48), transparent 36%),
+          linear-gradient(120deg, #02050d 0%, #06132d 58%, #102c66 100%);
+        box-shadow: 0 30px 90px rgba(0,0,0,.36);
+      }
+      .hero-copy {
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 3.4rem 0 3rem 3.2rem;
       }
       .hero-kicker {
-        color: #ffd799;
+        color: #8fc9ff;
         font-size: .82rem;
         font-weight: 750;
         letter-spacing: .12em;
@@ -59,22 +135,167 @@ st.markdown(
       }
       .hero h1 {
         color: white;
-        font-size: clamp(2rem, 5vw, 4rem);
-        line-height: 1.02;
-        margin: .55rem 0 .8rem;
-        letter-spacing: -.04em;
+        font-size: clamp(3.2rem, 5vw, 4.6rem);
+        line-height: .96;
+        max-width: 690px;
+        margin: .8rem 0 1.2rem;
+        letter-spacing: -.055em;
       }
-      .hero p {font-size: 1.06rem; max-width: 740px; color: #e6f7f2; margin: 0;}
+      .hero p {
+        font-size: 1rem;
+        line-height: 1.65;
+        max-width: 630px;
+        color: #c6d3e7;
+        margin: 0;
+      }
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .7rem;
+        margin-top: 1.8rem;
+      }
+      .hero-actions a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        font-weight: 800;
+        border-radius: 10px;
+        padding: .78rem 1.1rem;
+      }
+      .hero-primary {
+        color: #06101e !important;
+        background: linear-gradient(135deg, #6eb8ff, #3f91ff);
+        box-shadow: 0 12px 35px rgba(63, 145, 255, .28);
+      }
+      .hero-secondary {
+        color: #eef5ff !important;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,.045);
+      }
+      .hero-visual {
+        position: relative;
+        min-height: 500px;
+      }
+      .machine-glow {
+        position: absolute;
+        inset: 10% 3% 3% 2%;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(45,128,255,.26), transparent 67%);
+        filter: blur(3px);
+      }
+      .orbit {
+        position: absolute;
+        border: 2px solid rgba(116, 177, 255, .28);
+        border-radius: 50%;
+        box-shadow: inset 0 0 22px rgba(63, 145, 255, .14);
+      }
+      .orbit-a {width: 360px; height: 360px; top: 92px; right: 64px; transform: rotate(-17deg);}
+      .orbit-b {width: 265px; height: 420px; top: 55px; right: 110px; transform: rotate(39deg); border-color: rgba(255,107,44,.34);}
+      .orbit-c {width: 170px; height: 170px; top: 190px; right: 157px; border-color: rgba(255,189,53,.38);}
+      .machine-core {
+        position: absolute;
+        top: 230px;
+        right: 194px;
+        display: grid;
+        place-items: center;
+        width: 94px;
+        height: 94px;
+        border: 9px solid #102b69;
+        border-radius: 50%;
+        color: white;
+        font-weight: 900;
+        letter-spacing: -.04em;
+        background: radial-gradient(circle at 35% 30%, #74c0ff, #1d63f0 48%, #071634 72%);
+        box-shadow:
+          0 0 0 12px rgba(0,0,0,.32),
+          0 0 70px rgba(55,137,255,.62);
+      }
+      .track {
+        position: absolute;
+        height: 24px;
+        border-radius: 999px;
+        box-shadow: 0 14px 25px rgba(0,0,0,.3);
+      }
+      .track-a {
+        width: 235px;
+        top: 160px;
+        right: 25px;
+        background: linear-gradient(90deg, #ff4826, #ff8a22, #ffd446);
+        transform: rotate(12deg);
+      }
+      .track-b {
+        width: 260px;
+        top: 370px;
+        right: 34px;
+        background: linear-gradient(90deg, #1f5af1, #65b4ff);
+        transform: rotate(-20deg);
+      }
+      .track-c {
+        width: 215px;
+        top: 306px;
+        right: 225px;
+        background: linear-gradient(90deg, #ffbd35, #ff5d28);
+        transform: rotate(31deg);
+      }
+      .signal-card {
+        position: absolute;
+        z-index: 4;
+        padding: .68rem .82rem;
+        border: 1px solid rgba(255,255,255,.28);
+        border-radius: 12px;
+        color: white;
+        font-size: .82rem;
+        font-weight: 760;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 15px 35px rgba(0,0,0,.28);
+      }
+      .signal-one {top: 87px; right: 30px; background: rgba(54,132,255,.88);}
+      .signal-two {top: 405px; right: 265px; background: rgba(255,100,40,.85);}
+      .signal-three {top: 106px; right: 260px; background: rgba(14,23,43,.86);}
+      .proof-strip {
+        display: grid;
+        grid-template-columns: 1.25fr repeat(3, 1fr);
+        gap: .8rem;
+        align-items: stretch;
+        padding: 1.25rem;
+        border: 1px solid var(--line);
+        border-top: 0;
+        border-radius: 0 0 28px 28px;
+        background: linear-gradient(135deg, #151e2b, #101722);
+        margin-bottom: 1.3rem;
+      }
+      .proof-quote {
+        padding: .8rem 1rem;
+      }
+      .proof-quote strong {
+        display: block;
+        font-size: 1.25rem;
+        margin-bottom: .25rem;
+      }
+      .proof-quote span {color: var(--muted); font-size: .84rem;}
+      .proof-chip {
+        display: grid;
+        place-items: center;
+        min-height: 76px;
+        padding: .75rem;
+        text-align: center;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        color: #dce8fa;
+        background: rgba(255,255,255,.025);
+        font-weight: 750;
+      }
       .truth-note {
-        border: 1px solid #f1cd8f;
-        background: #fff8e7;
+        border: 1px solid rgba(255,189,53,.32);
+        background: rgba(102,68,12,.24);
         border-radius: 16px;
         padding: 1rem 1.15rem;
-        color: #634619;
+        color: #ffe0a0;
         margin: .7rem 0 1.5rem;
       }
       .eyebrow {
-        color: var(--green);
+        color: #72b9ff;
         font-weight: 800;
         letter-spacing: .08em;
         text-transform: uppercase;
@@ -82,39 +303,61 @@ st.markdown(
       }
       .role-head {
         border-left: 6px solid var(--gold);
-        background: white;
+        border-top: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(135deg, rgba(25,37,58,.96), rgba(12,20,36,.96));
         border-radius: 16px;
         padding: 1rem 1.1rem;
         margin: .25rem 0 1rem;
-        box-shadow: 0 8px 24px rgba(23,50,46,.06);
+        box-shadow: 0 16px 34px rgba(0,0,0,.2);
       }
       .role-head h3 {margin: .15rem 0 .35rem;}
-      .role-head p {margin: 0; color: #4b625e;}
+      .role-head p {margin: 0; color: var(--muted);}
       div[data-testid="stMetric"] {
-        background: rgba(255,255,255,.88);
-        border: 1px solid #dcece7;
+        background: rgba(17, 27, 45, .9);
+        border: 1px solid var(--line);
         padding: .8rem;
         border-radius: 14px;
       }
       div[data-testid="stForm"] {
-        background: rgba(255,255,255,.84);
-        border: 1px solid #dbece6;
+        background: linear-gradient(145deg, rgba(18,29,48,.95), rgba(9,16,30,.96));
+        border: 1px solid var(--line);
         border-radius: 22px;
-        padding: 1.2rem 1.3rem;
+        padding: 1.35rem 1.45rem;
       }
       .stButton > button, .stFormSubmitButton > button {
-        border-radius: 999px;
+        border-radius: 10px;
         font-weight: 750;
       }
-      a {color: var(--green-dark);}
+      div[data-baseweb="tab-list"] {
+        gap: .3rem;
+        background: rgba(11,18,32,.72);
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        padding: .3rem;
+      }
+      button[data-baseweb="tab"] {
+        border-radius: 9px;
+        color: #c6d3e7;
+      }
+      a {color: #77bbff;}
       footer {visibility: hidden;}
+      @media (max-width: 820px) {
+        .nav-pills a:not(.nav-cta) {display: none;}
+        .hero {grid-template-columns: 1fr; min-height: auto;}
+        .hero-copy {padding: 3.2rem 1.4rem 2rem;}
+        .hero h1 {font-size: clamp(3rem, 15vw, 4.5rem);}
+        .hero-visual {display: none;}
+        .proof-strip {grid-template-columns: 1fr;}
+      }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 
-@st.cache_resource(show_spinner="Training the 100-profile synthetic model…")
+@st.cache_resource(show_spinner="Training the 1,000-profile synthetic model…")
 def load_engine() -> CareerEngine:
     return CareerEngine.train()
 
@@ -140,15 +383,11 @@ def render_recommendation(result: dict, rank: int) -> None:
         unsafe_allow_html=True,
     )
 
-    score_col, model_col, skill_col, demand_col = st.columns(4)
+    score_col, model_col, skill_col, role_col = st.columns(4)
     score_col.metric("Comparative score", f"{result['recommendation_score']:.1f}/100")
     model_col.metric("Synthetic model fit", f"{result['synthetic_model_fit']:.1f}%")
     skill_col.metric("Skill fit index", f"{result['skill_fit']:.1f}%")
-    demand_col.metric(
-        "Demand direction",
-        result["future_demand"]["label"],
-        f"Current: {result['current_demand']['label']}",
-    )
+    role_col.metric("Current-role relevance", f"{result['role_fit']:.1f}%")
     st.caption(
         "These are ranking indices—not probabilities of getting hired, succeeding, "
         "or earning a particular salary."
@@ -229,14 +468,54 @@ def render_recommendation(result: dict, rank: int) -> None:
 
 st.markdown(
     """
+    <nav class="topbar">
+      <div class="brand">
+        <span class="brand-mark">H</span>
+        <span>Hakbang PH</span>
+      </div>
+      <div class="nav-pills">
+        <a href="#career-scan">Career scan</a>
+        <a href="#how-it-works">Method</a>
+        <a href="#evidence-library">Evidence</a>
+        <a class="nav-cta" href="#career-scan">Find my next move →</a>
+      </div>
+    </nav>
     <section class="hero">
-      <div class="hero-kicker">Hakbang PH · Career Move Explorer</div>
-      <h1>Find your next move in an AI-shaped workplace.</h1>
-      <p>
-        Compare three career pathways using your experience, self-assessed
-        skills, current industry, and a dated research ledger—then leave with a
-        practical project and an official credential to investigate.
-      </p>
+      <div class="hero-copy">
+        <div class="hero-kicker">Career intelligence for Filipino professionals</div>
+        <h1>Your next move.<br/>Built for the AI era.</h1>
+        <p>
+          Turn your current job, industry experience, and transferable skills
+          into three evidence-linked career hypotheses—with an AI opportunity,
+          a practical portfolio proof, and an official credential to investigate.
+        </p>
+        <div class="hero-actions">
+          <a class="hero-primary" href="#career-scan">Start my career scan →</a>
+          <a class="hero-secondary" href="#how-it-works">See how it works</a>
+        </div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="machine-glow"></div>
+        <div class="orbit orbit-a"></div>
+        <div class="orbit orbit-b"></div>
+        <div class="orbit orbit-c"></div>
+        <div class="track track-a"></div>
+        <div class="track track-b"></div>
+        <div class="track track-c"></div>
+        <div class="machine-core">YOU</div>
+        <div class="signal-card signal-one">AI opportunity ↗</div>
+        <div class="signal-card signal-two">Skills → proof</div>
+        <div class="signal-card signal-three">What could be next?</div>
+      </div>
+    </section>
+    <section class="proof-strip">
+      <div class="proof-quote">
+        <strong>Explore. Verify. Build.</strong>
+        <span>A decision aid—not a career guarantee.</span>
+      </div>
+      <div class="proof-chip">1,000 synthetic<br/>learning profiles</div>
+      <div class="proof-chip">10 career<br/>pathways</div>
+      <div class="proof-chip">Research + official<br/>credential links</div>
     </section>
     """,
     unsafe_allow_html=True,
@@ -244,10 +523,11 @@ st.markdown(
 st.markdown(
     """
     <div class="truth-note">
-      <strong>Research prototype:</strong> the statistical model learns from
-      exactly 100 synthetic profiles—not real career outcomes. Results support
-      exploration and should not be used for hiring, promotion, redundancy,
-      compensation, or another high-impact decision.
+      <strong>Research prototype:</strong> the model now learns from 1,000
+      diverse—but still synthetic—profiles. More simulated rows make the
+      patterns less repetitive; they do not create real-world evidence or prove
+      career outcomes. Do not use these results for hiring, promotion,
+      redundancy, compensation, or another high-impact decision.
     </div>
     """,
     unsafe_allow_html=True,
@@ -260,13 +540,36 @@ input_tab, method_tab, evidence_tab = st.tabs(
 engine = load_engine()
 
 with input_tab:
+    st.markdown('<span id="career-scan"></span>', unsafe_allow_html=True)
     st.header("Tell us what you can demonstrate today")
     st.write(
         "Use the 1–5 skill scale honestly: 1 means new to the skill; 5 means you "
         "can independently deliver strong work and explain your decisions."
     )
     with st.form("career_profile"):
-        context_col, experience_col, goal_col = st.columns(3)
+        title_col, role_col = st.columns([1.15, 1])
+        with title_col:
+            current_job_title = st.text_input(
+                "Current job title",
+                value="Customer Service Representative",
+                placeholder="Example: Finance Analyst or Team Leader",
+                help=(
+                    "The model uses words in your job title together with the "
+                    "closest role family selected beside it."
+                ),
+            )
+        with role_col:
+            current_role = st.selectbox(
+                "Closest current-role family",
+                options=list(CURRENT_ROLES),
+                format_func=lambda role: CURRENT_ROLES[role]["label"],
+                help=(
+                    "Choose the family that best represents your present work, "
+                    "even if your exact title is different."
+                ),
+            )
+
+        context_col, experience_col, leadership_col, goal_col = st.columns(4)
         with context_col:
             industry = st.selectbox(
                 "Current industry",
@@ -281,6 +584,7 @@ with input_tab:
                 value=5.0,
                 step=0.5,
             )
+        with leadership_col:
             leadership_years = st.number_input(
                 "Years leading people or major work",
                 min_value=0.0,
@@ -323,6 +627,8 @@ with input_tab:
     if submitted:
         profile = {
             "current_industry": industry,
+            "current_role": current_role,
+            "current_job_title": current_job_title.strip(),
             "years_experience": years_experience,
             "leadership_years": leadership_years,
             "goal": goal,
@@ -330,6 +636,7 @@ with input_tab:
         }
         try:
             st.session_state["recommendations"] = engine.recommend(profile)
+            st.session_state["profile"] = profile
         except ValueError as error:
             st.error(str(error))
 
@@ -340,6 +647,14 @@ with input_tab:
             "Treat these as options to investigate through conversations, work "
             "samples, and current job postings—not as instructions."
         )
+        saved_profile = st.session_state.get("profile", {})
+        if saved_profile:
+            st.caption(
+                "Profile signal used: "
+                f"{saved_profile['current_job_title']} · "
+                f"{CURRENT_ROLES[saved_profile['current_role']]['label']} · "
+                f"{INDUSTRIES[saved_profile['current_industry']]}"
+            )
         recommendation_tabs = st.tabs(
             [
                 f"{rank}. {item['career']}"
@@ -357,38 +672,45 @@ with input_tab:
                 render_recommendation(result, rank)
 
 with method_tab:
+    st.markdown('<span id="how-it-works"></span>', unsafe_allow_html=True)
     st.header("A transparent two-stage recommender")
     st.markdown(
-        """
-        1. **Synthetic model fit:** a logistic-regression classifier learns
-           patterns from 100 seeded synthetic profiles—ten per career pathway.
+        f"""
+        1. **Synthetic model fit:** a {MODEL_NAME.lower()} classifier learns
+           patterns from {len(engine.synthetic_profiles):,} seeded synthetic
+           profiles—{SYNTHETIC_PROFILES_PER_CAREER} per career pathway. Current
+           job title and current-role family are included alongside industry,
+           experience, and skills.
         2. **Evidence reranking:** the app combines model fit with direct skill
-           fit, experience, industry adjacency, and dated demand grades.
+           fit, current-role relevance, experience, industry adjacency, and
+           dated demand grades.
 
         The reranking weights are:
 
-        - synthetic model fit: **38%**
-        - direct skill fit: **24%**
-        - experience fit: **8%**
-        - current-demand evidence grade: **8%**
-        - future-demand evidence grade: **12%**
-        - industry adjacency: **6%**
-        - goal adjustment: **up to 4%**
+        - synthetic model fit: **42%**
+        - direct skill fit: **20%**
+        - current-role relevance: **14%**
+        - experience fit: **5%**
+        - current-demand evidence grade: **5%**
+        - future-demand evidence grade: **7%**
+        - industry adjacency: **4%**
+        - goal adjustment: **up to 3%**
         """
     )
     st.info(
-        "In the validated notebook run dated 27 July 2026, logistic regression "
-        "recorded mean macro-F1 0.876 and mean accuracy 0.880 in seeded "
-        "stratified five-fold cross-validation. These are synthetic-rule recovery "
-        "scores—not real-world career accuracy."
+        f"In the revised seeded five-fold benchmark, {MODEL_NAME.lower()} "
+        f"performed best among four tested classifiers, with mean macro-F1 "
+        f"{SYNTHETIC_CV_MACRO_F1:.3f} and mean accuracy "
+        f"{SYNTHETIC_CV_ACCURACY:.3f}. These measure recovery of synthetic "
+        "labeling rules—not real-world career accuracy."
     )
     st.subheader("Download the teaching dataset")
     csv_buffer = StringIO()
     engine.synthetic_profiles.to_csv(csv_buffer, index=False)
     st.download_button(
-        "Download 100 synthetic profiles (.csv)",
+        "Download 1,000 synthetic profiles (.csv)",
         data=csv_buffer.getvalue(),
-        file_name="hakbang_ph_100_synthetic_profiles.csv",
+        file_name="hakbang_ph_1000_synthetic_profiles.csv",
         mime="text/csv",
     )
     st.caption(
@@ -398,8 +720,9 @@ with method_tab:
     with st.expander("Important limitations"):
         st.markdown(
             """
-            - A 100-row synthetic dataset cannot validate real-world career outcomes.
+            - More synthetic rows reduce sampling noise but do not add real-world truth.
             - Self-assessed skills can be inconsistent.
+            - Job-title wording and role-family selection can be ambiguous.
             - Demand grades are ordinal editorial mappings, not live job counts.
             - Global evidence does not automatically describe every Philippine region.
             - The catalogue contains only ten pathways and omits many valid careers.
@@ -409,6 +732,7 @@ with method_tab:
         )
 
 with evidence_tab:
+    st.markdown('<span id="evidence-library"></span>', unsafe_allow_html=True)
     st.header("Fixed research sources")
     st.write(
         "The app does not generate factual claims with an LLM. Career evidence "
@@ -423,4 +747,3 @@ with evidence_tab:
         f"Evidence and official credential links were last reviewed "
         f"{EVIDENCE_CHECKED}. Recheck the provider page before paying or enrolling."
     )
-
