@@ -736,8 +736,9 @@ with input_tab:
     st.markdown('<span id="career-scan"></span>', unsafe_allow_html=True)
     st.header("Tell us what you can demonstrate today")
     st.write(
-        "Use the 1–5 skill scale honestly: 1 means new to the skill; 5 means you "
-        "can independently deliver strong work and explain your decisions."
+        "Use the 0–5 skill scale honestly: 0 means no experience with the skill; "
+        "1 means new to the skill; 5 means you can independently deliver strong "
+        "work and explain your decisions."
     )
     with st.form("career_profile"):
         title_col, role_col = st.columns([1.15, 1])
@@ -805,10 +806,13 @@ with input_tab:
             with skill_columns[index % 3]:
                 skill_values[skill_key] = st.slider(
                     skill["label"],
-                    min_value=1,
+                    min_value=0,
                     max_value=5,
                     value=3,
-                    help=skill["hint"],
+                    help=(
+                        "0 = no experience; 1 = new to the skill; "
+                        f"5 = independently proficient. Examples: {skill['hint']}."
+                    ),
                     key=f"skill_{skill_key}",
                 )
 

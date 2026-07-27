@@ -14,7 +14,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -22,11 +22,11 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 SEED = 20260725
 SYNTHETIC_PROFILES_PER_CAREER = 100
-DATASET_VERSION = "PH-STREAMLIT-SYN-1000-2026.07.27"
+DATASET_VERSION = "PH-STREAMLIT-SYN-1000-2026.07.28"
 EVIDENCE_CHECKED = "27 July 2026"
-MODEL_NAME = "Logistic Regression"
-SYNTHETIC_CV_MACRO_F1 = 0.8462
-SYNTHETIC_CV_ACCURACY = 0.8470
+MODEL_NAME = "Random Forest"
+SYNTHETIC_CV_MACRO_F1 = 0.8263
+SYNTHETIC_CV_ACCURACY = 0.8270
 
 INDUSTRIES = {
     "it_bpo": "IT–BPM / BPO",
@@ -1251,7 +1251,7 @@ PROTOTYPES = {
 }
 
 
-def _clip_rating(value: float) -> int:
+def _clip_present_rating(value: float) -> int:
     return int(np.clip(np.rint(value), 1, 5))
 
 
@@ -1322,8 +1322,18 @@ def generate_synthetic_profiles(
                     center * (1 - blend)
                     + adjacent["skills"][skill_index] * blend
                 )
-                row[skill] = _clip_rating(
-                    1 + 4 * mixed_center + rng.normal(0, 0.58)
+                # Zero represents no experience with the skill. It is more
+                # common for low-adjacency skills, while every pathway can
+                # still contain a small number of genuine beginners.
+                no_experience_probability = (
+                    0.03 + 0.20 * (1 - mixed_center) ** 2
+                )
+                row[skill] = (
+                    0
+                    if rng.random() < no_experience_probability
+                    else _clip_present_rating(
+                        1 + 4 * mixed_center + rng.normal(0, 0.58)
+                    )
                 )
             row["recommended_career"] = career_id
             rows.append(row)
@@ -1376,10 +1386,11 @@ class CareerEngine:
                 ("preprocess", preprocessor),
                 (
                     "model",
-                    LogisticRegression(
-                        max_iter=3000,
-                        class_weight="balanced",
+                    RandomForestClassifier(
+                        n_estimators=400,
+                        class_weight="balanced_subsample",
                         random_state=SEED,
+                        n_jobs=-1,
                     ),
                 ),
             ]
@@ -1410,7 +1421,7 @@ class CareerEngine:
             targets = target_ratings(str(career_id))
             skill_fit = 1 - np.mean(
                 [
-                    abs(float(profile[skill]) - target) / 4
+                    abs(float(profile[skill]) - target) / 5
                     for skill, target in targets.items()
                 ]
             )
@@ -1508,8 +1519,8 @@ def validate_profile(profile: dict[str, Any]) -> None:
             "Years leading others cannot be greater than total work experience."
         )
     for skill in SKILLS:
-        if not 1 <= float(profile[skill]) <= 5:
-            raise ValueError(f"{SKILLS[skill]['label']} must be between 1 and 5.")
+        if not 0 <= float(profile[skill]) <= 5:
+            raise ValueError(f"{SKILLS[skill]['label']} must be between 0 and 5.")
 
 
 def target_ratings(career_id: str) -> dict[str, int]:
