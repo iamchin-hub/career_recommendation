@@ -21,6 +21,9 @@ from career_engine import (
     CareerEngine,
 )
 
+APP_BUILD_ID = "2026.07.28-zero-skill-v2"
+ENGINE_CACHE_KEY = f"{DATASET_VERSION}:{APP_BUILD_ID}"
+
 
 st.set_page_config(
     page_title="Hakbang PH · Career Move Explorer",
@@ -493,7 +496,9 @@ st.markdown(
 
 
 @st.cache_resource(show_spinner="Training the 1,000-profile synthetic model…")
-def load_engine() -> CareerEngine:
+def load_engine(cache_key: str) -> CareerEngine:
+    """Train once per explicit app/model build so deployments cannot reuse stale logic."""
+    del cache_key
     return CareerEngine.train()
 
 
@@ -730,7 +735,7 @@ input_tab = st.container()
 method_tab = st.container()
 evidence_tab = st.container()
 
-engine = load_engine()
+engine = load_engine(ENGINE_CACHE_KEY)
 
 with input_tab:
     st.markdown('<span id="career-scan"></span>', unsafe_allow_html=True)
@@ -824,7 +829,8 @@ with input_tab:
 
     st.caption(
         "Privacy: this demo does not ask for your name, age, employer, résumé, or "
-        "protected characteristics. Inputs remain only in the current app session."
+        "protected characteristics. Inputs remain only in the current app session. "
+        f"Build: {APP_BUILD_ID}."
     )
 
     if submitted:
@@ -860,7 +866,18 @@ with input_tab:
                 st.session_state["recommendations"] = engine.recommend(profile)
                 st.session_state["profile"] = profile
             except ValueError as error:
-                st.error(str(error))
+                error_message = str(error)
+                if (
+                    "must be between 1 and 5" in error_message
+                    and any(value == 0 for value in skill_values.values())
+                ):
+                    st.error(
+                        "This server is still using an outdated cached model. "
+                        f"Expected build: {APP_BUILD_ID}. Reboot the Streamlit app "
+                        "once, then submit the profile again."
+                    )
+                else:
+                    st.error(error_message)
 
     if "recommendations" in st.session_state:
         st.divider()
