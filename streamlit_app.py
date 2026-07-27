@@ -133,10 +133,6 @@ st.markdown(
         align-items: center;
         gap: .45rem;
       }
-      .nav-pills form,
-      .hero-actions form {
-        margin: 0;
-      }
       .nav-pills button {
         appearance: none;
         border: 0;
@@ -345,6 +341,11 @@ st.markdown(
         padding: 1rem 1.15rem;
         color: #ffe0a0;
         margin: .7rem 0 1.5rem;
+      }
+      #career-scan,
+      #how-it-works,
+      #evidence-library {
+        scroll-margin-top: 1.25rem;
       }
       .eyebrow {
         color: #72b9ff;
@@ -600,50 +601,25 @@ def render_recommendation(result: dict, rank: int) -> None:
         st.warning(credential["caveat"])
 
 
-MAIN_SECTIONS = {
-    "career": "Build my profile",
-    "method": "How it works",
-    "evidence": "Evidence library",
-}
-requested_section = str(st.query_params.get("section", "")).lower()
-active_tab_label = MAIN_SECTIONS.get(
-    requested_section,
-    MAIN_SECTIONS["career"],
-)
-
-st.markdown(
+st.html(
     """
-    <nav class="topbar">
-      <div class="brand">
-        <span class="brand-mark">H</span>
-        <span>Hakbang PH</span>
-      </div>
-      <div class="nav-pills">
-        <form action="" method="get">
-          <input type="hidden" name="section" value="career"/>
-          <button type="submit">Career scan</button>
-        </form>
-        <form action="" method="get">
-          <input type="hidden" name="section" value="method"/>
-          <button type="submit">Method</button>
-        </form>
-        <form action="" method="get">
-          <input type="hidden" name="section" value="evidence"/>
-          <button type="submit">Evidence</button>
-        </form>
-        <form action="" method="get">
-          <input type="hidden" name="section" value="career"/>
-          <button class="nav-cta" type="submit">Find my next move →</button>
-        </form>
-      </div>
-    </nav>
-    """,
-    unsafe_allow_html=True,
-)
-
-if not requested_section:
-    st.markdown(
-        """
+    <div id="hakbang-navigation">
+      <nav class="topbar">
+        <div class="brand">
+          <span class="brand-mark">H</span>
+          <span>Hakbang PH</span>
+        </div>
+        <div class="nav-pills">
+          <button type="button" data-scroll-target="career-scan"
+                  aria-controls="career-scan">Career scan</button>
+          <button type="button" data-scroll-target="how-it-works"
+                  aria-controls="how-it-works">Method</button>
+          <button type="button" data-scroll-target="evidence-library"
+                  aria-controls="evidence-library">Evidence</button>
+          <button class="nav-cta" type="button" data-scroll-target="career-scan"
+                  aria-controls="career-scan">Find my next move →</button>
+        </div>
+      </nav>
         <section class="hero">
           <div class="hero-copy">
             <div class="hero-kicker">Career intelligence for Filipino professionals</div>
@@ -654,14 +630,12 @@ if not requested_section:
               a practical portfolio proof, and an official credential to investigate.
             </p>
             <div class="hero-actions">
-              <form action="" method="get">
-                <input type="hidden" name="section" value="career"/>
-                <button class="hero-primary" type="submit">Start my career scan →</button>
-              </form>
-              <form action="" method="get">
-                <input type="hidden" name="section" value="method"/>
-                <button class="hero-secondary" type="submit">See how it works</button>
-              </form>
+              <button class="hero-primary" type="button"
+                      data-scroll-target="career-scan"
+                      aria-controls="career-scan">Start my career scan →</button>
+              <button class="hero-secondary" type="button"
+                      data-scroll-target="how-it-works"
+                      aria-controls="how-it-works">See how it works</button>
             </div>
           </div>
           <div class="hero-visual" aria-hidden="true">
@@ -694,15 +668,67 @@ if not requested_section:
           career outcomes. Do not use these results for hiring, promotion,
           redundancy, compensation, or another high-impact decision.
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    </div>
+    <script>
+      (() => {
+        const navigation = document.getElementById("hakbang-navigation");
+        if (!navigation) return;
+        const reducedMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches;
+        const pause = (milliseconds) =>
+          new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+        const revealAndScroll = async (targetId) => {
+          const scroller = document.querySelector('[data-testid="stMain"]');
+          let target = document.getElementById(targetId);
 
-input_tab, method_tab, evidence_tab = st.tabs(
-    ["Build my profile", "How it works", "Evidence library"],
-    default=active_tab_label,
-    key=f"main-section-{requested_section or 'landing'}",
+          if (!target && scroller) {
+            const maximum = Math.max(
+              0,
+              scroller.scrollHeight - scroller.clientHeight
+            );
+            const hint = {
+              "career-scan": 0,
+              "how-it-works": maximum * 0.58,
+              "evidence-library": maximum
+            }[targetId] ?? 0;
+
+            scroller.scrollTo({top: hint, behavior: "auto"});
+            await pause(100);
+            target = document.getElementById(targetId);
+
+            if (!target) {
+              const step = Math.max(500, scroller.clientHeight * 0.8);
+              for (let position = 0; position <= maximum; position += step) {
+                scroller.scrollTo({top: position, behavior: "auto"});
+                await pause(70);
+                target = document.getElementById(targetId);
+                if (target) break;
+              }
+            }
+          }
+
+          if (target) {
+            target.scrollIntoView({
+              behavior: reducedMotion ? "auto" : "smooth",
+              block: "start"
+            });
+          }
+        };
+        navigation.querySelectorAll("[data-scroll-target]").forEach((button) => {
+          button.addEventListener("click", () => {
+            revealAndScroll(button.dataset.scrollTarget);
+          });
+        });
+      })();
+    </script>
+    """,
+    unsafe_allow_javascript=True,
 )
+
+input_tab = st.container()
+method_tab = st.container()
+evidence_tab = st.container()
 
 engine = load_engine()
 
@@ -864,6 +890,7 @@ with input_tab:
                 render_recommendation(result, rank)
 
 with method_tab:
+    st.divider()
     st.markdown('<span id="how-it-works"></span>', unsafe_allow_html=True)
     st.header("A transparent two-stage recommender")
     st.markdown(
@@ -924,6 +951,7 @@ with method_tab:
         )
 
 with evidence_tab:
+    st.divider()
     st.markdown('<span id="evidence-library"></span>', unsafe_allow_html=True)
     st.header("Fixed research sources")
     st.write(
