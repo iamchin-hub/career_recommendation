@@ -1,9 +1,9 @@
-"""Explainable career recommendation engine for the Hakbang PH Streamlit app.
+"""Skills-first career recommendation engine for the Hakbang PH app.
 
-The model is trained only on 1,000 deterministic synthetic profiles. Its output
-is a comparative exploration aid, not a hiring probability or employment forecast.
-All research and credential text comes from the fixed, source-linked registry
-below; no generative AI is used at runtime.
+The model is trained only on deterministic synthetic skill profiles. Industry,
+employer, current title, demographics, and protected characteristics are not model
+features. Runtime factual content comes only from the fixed, source-linked registry;
+no generative AI creates career, demand, or credential claims.
 """
 
 from __future__ import annotations
@@ -13,22 +13,23 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import StandardScaler
 
 
 SEED = 20260725
-SYNTHETIC_PROFILES_PER_CAREER = 100
-DATASET_VERSION = "PH-STREAMLIT-SYN-1000-2026.07.28"
-EVIDENCE_CHECKED = "27 July 2026"
-MODEL_NAME = "Random Forest"
-SYNTHETIC_CV_MACRO_F1 = 0.8263
-SYNTHETIC_CV_ACCURACY = 0.8270
+SYNTHETIC_PROFILES_PER_CAREER = 200
+DATASET_VERSION = "PH-SKILLS-FIRST-SYN-2200-2026.07.28"
+EVIDENCE_CHECKED = "28 July 2026"
+MODEL_NAME = "Extra Trees"
+SYNTHETIC_CV_MACRO_F1 = 0.7854
+SYNTHETIC_CV_ACCURACY = 0.7868
 
-INDUSTRIES = {
+# Retained only as a migration reference for profiles created before the
+# skills-first v5 schema. None of these legacy fields enter model training or
+# recommendation scoring.
+LEGACY_INDUSTRIES = {
     "it_bpo": "IT–BPM / BPO",
     "financial_services": "Banking & financial services",
     "manufacturing_logistics": "Manufacturing & logistics",
@@ -41,7 +42,7 @@ INDUSTRIES = {
     "other": "Other industry",
 }
 
-CURRENT_ROLES = {
+LEGACY_CURRENT_ROLES = {
     "customer_service": {
         "label": "Customer service / contact center",
         "titles": [
@@ -222,6 +223,17 @@ CURRENT_ROLES = {
             "Patient Services Officer",
         ],
     },
+    "science_laboratory": {
+        "label": "Science, chemistry, or laboratory practice",
+        "titles": [
+            "Chemist",
+            "Quality Control Chemist",
+            "Laboratory Analyst",
+            "Research Scientist",
+            "Laboratory Scientist",
+            "Chemical Technician",
+        ],
+    },
     "hospitality_tourism": {
         "label": "Hospitality / tourism",
         "titles": [
@@ -247,54 +259,78 @@ CURRENT_ROLES = {
 SKILLS = {
     "data_analytics": {
         "label": "Data & analytics",
-        "hint": "Spreadsheets, reporting, SQL, statistics, and dashboards",
+        "hint": "Spreadsheets, reporting, SQL, statistics, dashboards, and evidence",
     },
-    "technology": {
-        "label": "Technology",
-        "hint": "Software, systems, cloud, coding, and technical troubleshooting",
+    "ai_automation": {
+        "label": "AI & automation",
+        "hint": "Responsible AI use, prompting, workflow automation, and output checking",
+    },
+    "software_cloud": {
+        "label": "Software & cloud",
+        "hint": "Applications, systems, cloud platforms, coding, and troubleshooting",
+    },
+    "cybersecurity_risk": {
+        "label": "Cybersecurity & risk",
+        "hint": "Security controls, privacy, governance, audit, and risk response",
     },
     "communication": {
-        "label": "Communication",
-        "hint": "Writing, presenting, negotiation, and stakeholder alignment",
+        "label": "Communication & storytelling",
+        "hint": "Writing, presenting, negotiation, facilitation, and explaining decisions",
     },
-    "project_management": {
-        "label": "Project delivery",
-        "hint": "Planning, risk, scope, coordination, and agile ways of working",
+    "project_change": {
+        "label": "Project & change delivery",
+        "hint": "Planning, scope, risk, coordination, adoption, and improvement delivery",
     },
     "creative_design": {
         "label": "Creative & design",
         "hint": "Design, campaigns, prototyping, content, and ideation",
     },
-    "finance": {
-        "label": "Finance",
-        "hint": "Budgeting, accounting, forecasting, and commercial analysis",
+    "finance_commercial": {
+        "label": "Finance & commercial",
+        "hint": "Budgeting, accounting, forecasting, pricing, and commercial analysis",
     },
-    "people_hr": {
-        "label": "People & HR",
-        "hint": "Coaching, talent, workforce planning, and employee experience",
+    "people_coaching": {
+        "label": "People & coaching",
+        "hint": "Coaching, talent, teamwork, workforce planning, and employee experience",
     },
-    "operations": {
-        "label": "Operations",
-        "hint": "Process improvement, logistics, quality, and service delivery",
+    "operations_quality": {
+        "label": "Operations & quality",
+        "hint": "Process improvement, logistics, controls, quality, and service delivery",
     },
-    "customer_experience": {
-        "label": "Customer experience",
-        "hint": "Research, service design, customer success, and voice of customer",
+    "customer_research": {
+        "label": "Customer & user research",
+        "hint": "Research, service design, customer success, usability, and voice of customer",
+    },
+    "scientific_laboratory": {
+        "label": "Scientific & laboratory practice",
+        "hint": (
+            "Experimental methods, analytical chemistry, laboratory quality, "
+            "validation, and safety"
+        ),
     },
 }
 
 NUMERIC_FEATURES = [
     "years_experience",
-    "leadership_years",
     *SKILLS.keys(),
 ]
-TEXT_FEATURE = "current_job_title"
-CATEGORICAL_FEATURES = ["current_industry", "current_role"]
-CAREER_GOALS = {
+TEXT_FEATURE = None
+CATEGORICAL_FEATURES: list[str] = []
+LEGACY_CAREER_GOALS = {
     "future_ready": "Build skills for an AI-shaped future",
     "leadership": "Move toward leadership",
     "sector_switch": "Switch industry or sector",
     "build_specialty": "Deepen a specialist skill",
+}
+
+LEGACY_TITLE_ROLE_HINTS = {
+    "chemist": "science_laboratory",
+    "chemical technician": "science_laboratory",
+    "laboratory analyst": "science_laboratory",
+    "lab analyst": "science_laboratory",
+    "laboratory scientist": "science_laboratory",
+    "research scientist": "science_laboratory",
+    "microbiologist": "science_laboratory",
 }
 
 SOURCES = {
@@ -363,6 +399,21 @@ SOURCES = {
         "owner": "Association for Supply Chain Management",
         "url": "https://www.ascm.org/learning-development/certifications-credentials/cpim/",
         "published": f"Checked {EVIDENCE_CHECKED}",
+    },
+    "prc_chem_lab": {
+        "name": "Chemistry Law requirements for chemical laboratories",
+        "owner": "Philippine Professional Regulation Commission",
+        "url": (
+            "https://prc.gov.ph/article/announcement-requirement-chemistry-law-"
+            "certificate-authority-operate-chemical-laboratories"
+        ),
+        "published": "29 May 2017",
+    },
+    "iso_17025": {
+        "name": "ISO/IEC 17025:2017 — Testing and calibration laboratories",
+        "owner": "International Organization for Standardization",
+        "url": "https://www.iso.org/standard/66912.html",
+        "published": "Confirmed current in 2023; checked 28 July 2026",
     },
 }
 
@@ -948,6 +999,92 @@ CAREERS: dict[str, dict[str, Any]] = {
             ),
         },
     },
+    "laboratory_quality_specialist": {
+        "title": "Laboratory Quality & Scientific Operations Specialist",
+        "summary": (
+            "Strengthen laboratory quality, method reliability, safety, compliance, "
+            "and the operating systems that support defensible scientific results."
+        ),
+        "min_experience": 2,
+        "preferred_industries": [
+            "healthcare",
+            "manufacturing_logistics",
+            "government_public",
+            "professional_services",
+        ],
+        "current_demand": demand(
+            "Role-relevant",
+            0.7,
+            "Philippine regulatory evidence—not a vacancy count",
+            "PRC states that only registered chemists can head a chemical analyses "
+            "laboratory, supervise chemical work, and certify analyses in covered "
+            "Philippine laboratories. This directly supports a regulated leadership "
+            "path, but it does not quantify available jobs.",
+            ["prc_chem_lab"],
+        ),
+        "future_demand": demand(
+            "Strong standards relevance",
+            0.8,
+            "Standards-based directional evidence—not an employment forecast",
+            "ISO/IEC 17025 remains the international competence standard for testing "
+            "and calibration laboratories. ISO notes its focus on competence, "
+            "impartiality, consistent operation, information technology, and senior "
+            "management responsibility. This supports continued quality-leadership "
+            "relevance without proving future vacancy growth.",
+            ["iso_17025"],
+        ),
+        "ai_opportunity": (
+            "Use automation and AI to organize controlled documents, review structured "
+            "quality data, detect trends, and draft investigation questions while "
+            "keeping method validation, traceability, uncertainty, safety, and final "
+            "scientific judgment under qualified human control."
+        ),
+        "human_edge": (
+            "Scientific accountability, laboratory safety, method suitability, "
+            "traceability, ethical escalation, and responsibility for defensible results."
+        ),
+        "first_proof": (
+            "Create a sanitized laboratory-improvement case: map one controlled process, "
+            "identify a quality or safety risk, propose an evidence-based change, and "
+            "define verification, documentation, and escalation controls."
+        ),
+        "certification": {
+            "name": "Certified Quality Improvement Associate (CQIA)",
+            "issuer": "American Society for Quality (ASQ)",
+            "url": "https://www.asq.org/cert/quality-improvement-associate",
+            "eligibility": (
+                "ASQ currently requires two years of full-time paid work experience, "
+                "or an associate degree or two years of equivalent higher education. "
+                "Confirm the current requirements and exam availability with ASQ."
+            ),
+            "why_it_fits": (
+                "CQIA covers foundational quality tools, improvement methods, and "
+                "teamwork. It can complement chemistry expertise when building evidence "
+                "for laboratory-quality and process-improvement responsibilities."
+            ),
+            "practitioner": (
+                "Krystel Sherman, ASQ CQIA · quality-control microbiologist and chemist"
+            ),
+            "practitioner_insight": (
+                "Her public professional profile lists CQIA alongside a chemistry and "
+                "quality-control career. The available profile establishes credential "
+                "use in a relevant profession but does not claim that CQIA caused a "
+                "promotion or employment outcome."
+            ),
+            "source_type": (
+                "Public credential-holder profile; no causal career outcome reported"
+            ),
+            "practitioner_url": (
+                "https://www.linkedin.com/in/krystel-sherman-asq-cqia-at-50235711"
+            ),
+            "caveat": (
+                "CQIA is a foundational quality credential, not a chemistry license, "
+                "ISO/IEC 17025 laboratory accreditation, or proof of leadership. "
+                "Philippine chemistry practice and laboratory-head responsibilities "
+                "remain subject to PRC registration and applicable law."
+            ),
+        },
+    },
     "customer_experience_manager": {
         "title": "Customer Experience Manager",
         "summary": (
@@ -1085,7 +1222,9 @@ CAREERS: dict[str, dict[str, Any]] = {
     },
 }
 
-PROTOTYPES = {
+# Legacy role-family prototypes are retained only as an audit trail for the
+# pre-v5 model. The deployed skills-first model uses JOB_PROTOTYPES below.
+LEGACY_PROTOTYPES = {
     "data_bi_analyst": {
         "industries": [
             "financial_services",
@@ -1100,7 +1239,9 @@ PROTOTYPES = {
         ],
         "experience": 4.5,
         "leadership": 0.8,
-        "skills": [0.92, 0.78, 0.66, 0.53, 0.34, 0.56, 0.31, 0.52, 0.48],
+        "skills": [
+            0.92, 0.78, 0.66, 0.53, 0.34, 0.56, 0.31, 0.52, 0.48, 0.25
+        ],
     },
     "cybersecurity_analyst": {
         "industries": [
@@ -1116,7 +1257,9 @@ PROTOTYPES = {
         ],
         "experience": 5.0,
         "leadership": 0.7,
-        "skills": [0.60, 0.96, 0.62, 0.55, 0.20, 0.30, 0.20, 0.54, 0.37],
+        "skills": [
+            0.60, 0.96, 0.62, 0.55, 0.20, 0.30, 0.20, 0.54, 0.37, 0.20
+        ],
     },
     "cloud_solutions_engineer": {
         "industries": [
@@ -1132,7 +1275,9 @@ PROTOTYPES = {
         ],
         "experience": 5.5,
         "leadership": 1.0,
-        "skills": [0.66, 0.97, 0.66, 0.68, 0.25, 0.28, 0.20, 0.63, 0.42],
+        "skills": [
+            0.66, 0.97, 0.66, 0.68, 0.25, 0.28, 0.20, 0.63, 0.42, 0.15
+        ],
     },
     "project_manager": {
         "industries": [
@@ -1149,7 +1294,9 @@ PROTOTYPES = {
         ],
         "experience": 8.0,
         "leadership": 3.5,
-        "skills": [0.58, 0.57, 0.92, 0.97, 0.35, 0.44, 0.55, 0.69, 0.72],
+        "skills": [
+            0.58, 0.57, 0.92, 0.97, 0.35, 0.44, 0.55, 0.69, 0.72, 0.20
+        ],
     },
     "digital_marketing_strategist": {
         "industries": [
@@ -1165,7 +1312,9 @@ PROTOTYPES = {
         ],
         "experience": 4.5,
         "leadership": 1.0,
-        "skills": [0.72, 0.62, 0.88, 0.61, 0.96, 0.35, 0.28, 0.42, 0.82],
+        "skills": [
+            0.72, 0.62, 0.88, 0.61, 0.96, 0.35, 0.28, 0.42, 0.82, 0.10
+        ],
     },
     "people_analytics_specialist": {
         "industries": [
@@ -1181,7 +1330,9 @@ PROTOTYPES = {
         ],
         "experience": 5.5,
         "leadership": 1.2,
-        "skills": [0.84, 0.58, 0.86, 0.58, 0.32, 0.35, 0.97, 0.45, 0.64],
+        "skills": [
+            0.84, 0.58, 0.86, 0.58, 0.32, 0.35, 0.97, 0.45, 0.64, 0.25
+        ],
     },
     "supply_chain_analyst": {
         "industries": [
@@ -1197,7 +1348,9 @@ PROTOTYPES = {
         ],
         "experience": 5.0,
         "leadership": 1.0,
-        "skills": [0.84, 0.57, 0.68, 0.66, 0.27, 0.51, 0.26, 0.97, 0.56],
+        "skills": [
+            0.84, 0.57, 0.68, 0.66, 0.27, 0.51, 0.26, 0.97, 0.56, 0.30
+        ],
     },
     "fpa_analyst": {
         "industries": [
@@ -1213,7 +1366,26 @@ PROTOTYPES = {
         ],
         "experience": 5.5,
         "leadership": 1.0,
-        "skills": [0.87, 0.54, 0.67, 0.63, 0.25, 0.98, 0.28, 0.56, 0.43],
+        "skills": [
+            0.87, 0.54, 0.67, 0.63, 0.25, 0.98, 0.28, 0.56, 0.43, 0.25
+        ],
+    },
+    "laboratory_quality_specialist": {
+        "industries": [
+            "healthcare",
+            "manufacturing_logistics",
+            "government_public",
+            "professional_services",
+        ],
+        "current_roles": [
+            "science_laboratory",
+            "quality_process",
+        ],
+        "experience": 4.5,
+        "leadership": 1.0,
+        "skills": [
+            0.55, 0.45, 0.65, 0.55, 0.20, 0.20, 0.30, 0.75, 0.25, 0.98
+        ],
     },
     "customer_experience_manager": {
         "industries": [
@@ -1230,7 +1402,9 @@ PROTOTYPES = {
         ],
         "experience": 7.0,
         "leadership": 3.0,
-        "skills": [0.52, 0.51, 0.95, 0.78, 0.50, 0.37, 0.55, 0.65, 0.98],
+        "skills": [
+            0.52, 0.51, 0.95, 0.78, 0.50, 0.37, 0.55, 0.65, 0.98, 0.15
+        ],
     },
     "ux_researcher": {
         "industries": [
@@ -1246,11 +1420,366 @@ PROTOTYPES = {
         ],
         "experience": 4.5,
         "leadership": 0.8,
-        "skills": [0.75, 0.65, 0.94, 0.57, 0.93, 0.25, 0.45, 0.38, 0.88],
+        "skills": [
+            0.75, 0.65, 0.94, 0.57, 0.93, 0.25, 0.45, 0.38, 0.88, 0.35
+        ],
     },
 }
 
-LEADERSHIP_PATHWAYS: dict[str, dict[str, Any]] = {
+
+# Each vector follows SKILLS insertion order and is a documented design
+# assumption on a 0–1 scale. These are not employer requirements or occupational
+# standards. They generate a balanced teaching dataset and make the ranking logic
+# inspectable.
+JOB_PROTOTYPES: dict[str, dict[str, Any]] = {
+    "data_bi_analyst": {
+        "experience": 4.0,
+        "skills": [0.98, 0.78, 0.60, 0.35, 0.72, 0.60, 0.25, 0.55, 0.25, 0.50, 0.45, 0.20],
+        "core_skills": ["data_analytics"],
+        "application_contexts": [
+            "Finance and insurance",
+            "Healthcare and life sciences",
+            "Retail and e-commerce",
+            "Government and public services",
+            "Technology and professional services",
+        ],
+    },
+    "cybersecurity_analyst": {
+        "experience": 3.5,
+        "skills": [0.65, 0.70, 0.90, 0.98, 0.65, 0.65, 0.20, 0.25, 0.25, 0.70, 0.30, 0.15],
+        "core_skills": ["cybersecurity_risk", "software_cloud"],
+        "application_contexts": [
+            "Banking and financial services",
+            "Government and critical infrastructure",
+            "Healthcare",
+            "Telecommunications",
+            "Technology and business-process services",
+        ],
+    },
+    "cloud_solutions_engineer": {
+        "experience": 4.5,
+        "skills": [0.60, 0.80, 0.98, 0.75, 0.65, 0.72, 0.25, 0.25, 0.25, 0.75, 0.30, 0.15],
+        "core_skills": ["software_cloud", "ai_automation"],
+        "application_contexts": [
+            "Technology and telecommunications",
+            "Banking and financial services",
+            "Retail and e-commerce",
+            "Government digital services",
+            "Professional and managed services",
+        ],
+    },
+    "project_manager": {
+        "experience": 6.5,
+        "skills": [0.50, 0.60, 0.50, 0.35, 0.95, 0.98, 0.50, 0.50, 0.78, 0.82, 0.70, 0.15],
+        "core_skills": ["project_change", "communication"],
+        "application_contexts": [
+            "Technology transformation",
+            "Construction and infrastructure",
+            "Healthcare",
+            "Finance and professional services",
+            "Government and nonprofit programs",
+        ],
+    },
+    "digital_marketing_strategist": {
+        "experience": 3.5,
+        "skills": [0.68, 0.72, 0.58, 0.30, 0.88, 0.68, 0.96, 0.32, 0.42, 0.50, 0.90, 0.10],
+        "core_skills": ["creative_design", "communication", "customer_research"],
+        "application_contexts": [
+            "Retail and e-commerce",
+            "Consumer goods",
+            "Tourism and hospitality",
+            "Technology and media",
+            "Education and professional services",
+        ],
+    },
+    "people_analytics_specialist": {
+        "experience": 4.0,
+        "skills": [0.85, 0.65, 0.55, 0.42, 0.82, 0.68, 0.40, 0.38, 0.98, 0.55, 0.60, 0.15],
+        "core_skills": ["people_coaching", "data_analytics"],
+        "application_contexts": [
+            "Large multi-industry employers",
+            "Business-process services",
+            "Finance and professional services",
+            "Healthcare",
+            "Government and education",
+        ],
+    },
+    "supply_chain_analyst": {
+        "experience": 4.0,
+        "skills": [0.84, 0.68, 0.58, 0.30, 0.68, 0.72, 0.25, 0.58, 0.35, 0.98, 0.55, 0.20],
+        "core_skills": ["operations_quality", "data_analytics"],
+        "application_contexts": [
+            "Manufacturing",
+            "Retail and e-commerce",
+            "Transport and logistics",
+            "Healthcare supply networks",
+            "Food, agriculture, and consumer goods",
+        ],
+    },
+    "fpa_analyst": {
+        "experience": 4.5,
+        "skills": [0.90, 0.70, 0.52, 0.40, 0.75, 0.70, 0.25, 0.99, 0.32, 0.66, 0.42, 0.20],
+        "core_skills": ["finance_commercial", "data_analytics"],
+        "application_contexts": [
+            "Finance and insurance",
+            "Retail and consumer goods",
+            "Manufacturing",
+            "Technology and telecommunications",
+            "Professional services",
+        ],
+    },
+    "laboratory_quality_specialist": {
+        "experience": 3.5,
+        "skills": [0.62, 0.55, 0.40, 0.45, 0.68, 0.58, 0.20, 0.18, 0.30, 0.85, 0.25, 0.99],
+        "core_skills": ["scientific_laboratory", "operations_quality"],
+        "application_contexts": [
+            "Pharmaceutical and healthcare laboratories",
+            "Food and beverage testing",
+            "Chemicals and manufacturing",
+            "Environmental and government laboratories",
+            "Research and testing services",
+        ],
+    },
+    "customer_experience_manager": {
+        "experience": 5.5,
+        "skills": [0.55, 0.65, 0.45, 0.32, 0.97, 0.80, 0.65, 0.35, 0.85, 0.72, 0.99, 0.15],
+        "core_skills": ["customer_research", "communication"],
+        "application_contexts": [
+            "Business-process and contact-center services",
+            "Retail and e-commerce",
+            "Banking and insurance",
+            "Telecommunications",
+            "Travel, hospitality, and healthcare",
+        ],
+    },
+    "ux_researcher": {
+        "experience": 3.5,
+        "skills": [0.65, 0.72, 0.58, 0.30, 0.92, 0.66, 0.98, 0.25, 0.70, 0.42, 0.98, 0.20],
+        "core_skills": ["customer_research", "creative_design", "communication"],
+        "application_contexts": [
+            "Software and digital products",
+            "Finance and fintech",
+            "Retail and e-commerce",
+            "Healthcare technology",
+            "Government and public digital services",
+        ],
+    },
+}
+
+
+LEARNING_OPTIONS: dict[str, list[dict[str, str]]] = {
+    "data_bi_analyst": [
+        {
+            "type": "Certification",
+            "name": "Microsoft Certified: Power BI Data Analyst Associate",
+            "provider": "Microsoft",
+            "url": "https://learn.microsoft.com/en-us/credentials/certifications/data-analyst-associate/",
+            "fit": "Validates preparing, modeling, visualizing, analyzing, and securing data in Power BI.",
+            "eligibility": "Intermediate credential; Microsoft lists no formal work-experience prerequisite. Review the current PL-300 study guide.",
+        },
+        {
+            "type": "Course",
+            "name": "PL-300: Design and manage analytics solutions using Power BI",
+            "provider": "Microsoft Learn",
+            "url": "https://learn.microsoft.com/en-us/training/courses/pl-300t00",
+            "fit": "Official preparation covering the Power BI workflow assessed by PL-300.",
+            "eligibility": "Review the course prerequisites and current delivery options on Microsoft Learn.",
+        },
+    ],
+    "cybersecurity_analyst": [
+        {
+            "type": "Certification",
+            "name": "Certified in Cybersecurity (CC)",
+            "provider": "ISC2",
+            "url": "https://www.isc2.org/certifications/cc",
+            "fit": "Entry-level coverage of security principles, incident response, access controls, networks, and security operations.",
+            "eligibility": "ISC2 states that no work experience is required. Confirm current exam, training, and membership terms.",
+        },
+        {
+            "type": "Official training",
+            "name": "ISC2 CC Online Self-Paced Training",
+            "provider": "ISC2",
+            "url": "https://www.isc2.org/certifications/cc",
+            "fit": "Official training aligned with the current CC exam domains.",
+            "eligibility": "Availability and pricing can change; verify them on the ISC2 page before enrolling.",
+        },
+    ],
+    "cloud_solutions_engineer": [
+        {
+            "type": "Certification",
+            "name": "AWS Certified Solutions Architect – Associate",
+            "provider": "Amazon Web Services",
+            "url": "https://aws.amazon.com/certification/certified-solutions-architect-associate/",
+            "fit": "Covers secure, resilient, high-performing, and cost-optimized cloud solution design.",
+            "eligibility": "No formal prerequisite; AWS recommends about one year of hands-on cloud solution-design experience.",
+        },
+        {
+            "type": "Learning path",
+            "name": "Microsoft Azure Fundamentals: Describe cloud concepts",
+            "provider": "Microsoft Learn",
+            "url": "https://learn.microsoft.com/en-us/training/paths/microsoft-azure-fundamentals-describe-cloud-concepts/",
+            "fit": "A beginner path for cloud concepts before deeper platform architecture study.",
+            "eligibility": "Beginner learning path; check the live Microsoft Learn page for current modules.",
+        },
+    ],
+    "project_manager": [
+        {
+            "type": "Certification",
+            "name": "Certified Associate in Project Management (CAPM)®",
+            "provider": "Project Management Institute",
+            "url": "https://www.pmi.org/certifications/certified-associate-capm",
+            "fit": "Builds foundational knowledge in predictive, agile, and business-analysis ways of working.",
+            "eligibility": "PMI requires a secondary degree or equivalent plus 23 hours of project-management education; no work experience is required.",
+        },
+        {
+            "type": "Advanced certification",
+            "name": "Project Management Professional (PMP)®",
+            "provider": "Project Management Institute",
+            "url": "https://www.pmi.org/certifications/project-management-pmp",
+            "fit": "For professionals who can document substantial responsibility for leading projects.",
+            "eligibility": "Experience and training requirements vary by education. Verify the current PMI eligibility route before applying.",
+        },
+    ],
+    "digital_marketing_strategist": [
+        {
+            "type": "Professional certificate",
+            "name": "Google Digital Marketing & E-commerce Certificate",
+            "provider": "Google",
+            "url": "https://grow.google/certificates/digital-marketing-ecommerce/",
+            "fit": "Covers campaigns, customer engagement, analytics, e-commerce, and practical AI use in marketing.",
+            "eligibility": "Google describes it as foundational and requiring no previous experience.",
+        },
+        {
+            "type": "Certification",
+            "name": "Meta Certified Digital Marketing Associate",
+            "provider": "Meta Blueprint",
+            "url": "https://www.facebookblueprint.com/student/path/517001-get-certified-as-digital-marketing-associate",
+            "fit": "Covers Meta advertising fundamentals, targeting, creative, optimization, and measurement.",
+            "eligibility": "Entry-level credential; confirm current exam language, delivery, and regional availability.",
+        },
+    ],
+    "people_analytics_specialist": [
+        {
+            "type": "Specialty credential",
+            "name": "People Analytics Specialty Credential",
+            "provider": "Society for Human Resource Management",
+            "url": "https://www.shrm.org/credentials/specialty-credentials/people-analytics-credential",
+            "fit": "Combines data literacy, workforce metrics, applied analysis, and communication of people insights.",
+            "eligibility": "SHRM states that SHRM-CP or SHRM-SCP certification is not required; verify current package components and availability.",
+        },
+        {
+            "type": "Course",
+            "name": "Transform business workflows with generative AI",
+            "provider": "Microsoft Learn",
+            "url": "https://learn.microsoft.com/en-us/training/courses/ab-730t00",
+            "fit": "Builds practical, no-code AI workflow skills applicable to HR reporting and decision support.",
+            "eligibility": "Beginner course for business users; review current product-access requirements.",
+        },
+    ],
+    "supply_chain_analyst": [
+        {
+            "type": "Certification",
+            "name": "APICS Certified in Planning and Inventory Management (CPIM)",
+            "provider": "Association for Supply Chain Management",
+            "url": "https://www.ascm.org/learning-development/certifications-credentials/cpim/",
+            "fit": "Covers strategy alignment, S&OP, demand, supply, inventory, quality improvement, and technology.",
+            "eligibility": "Review the current CPIM exam version, bundle, testing, and maintenance requirements with ASCM.",
+        },
+        {
+            "type": "Course",
+            "name": "Transform business workflows with generative AI",
+            "provider": "Microsoft Learn",
+            "url": "https://learn.microsoft.com/en-us/training/courses/ab-730t00",
+            "fit": "Supports responsible automation of recurring analysis, reporting, and workflow tasks.",
+            "eligibility": "Beginner course for business users; confirm current access and delivery options.",
+        },
+    ],
+    "fpa_analyst": [
+        {
+            "type": "Certification",
+            "name": "Certified Management Accountant (CMA)®",
+            "provider": "Institute of Management Accountants",
+            "url": "https://www.imanet.org/ima-certifications/cma-certification",
+            "fit": "Covers planning, performance, analytics, controls, financial decision-making, and strategy.",
+            "eligibility": "IMA requires membership, qualifying education, two years of relevant experience, and both exam parts.",
+        },
+        {
+            "type": "Certification",
+            "name": "Certified Corporate FP&A Professional (FPAC)",
+            "provider": "Association for Financial Professionals",
+            "url": "https://fpacert.afponline.org/about-exam/eligibility",
+            "fit": "Focuses on forecasting, modeling, planning, analytics, and business partnership.",
+            "eligibility": "AFP applies education, relevant full-time experience, ethics, and two-part examination requirements.",
+        },
+    ],
+    "laboratory_quality_specialist": [
+        {
+            "type": "Certification",
+            "name": "Certified Quality Improvement Associate (CQIA)",
+            "provider": "American Society for Quality",
+            "url": "https://www.asq.org/cert/quality-improvement-associate",
+            "fit": "Builds foundational quality tools, team participation, and improvement-method knowledge.",
+            "eligibility": "ASQ currently requires two years of full-time paid experience or qualifying higher education. Verify the current handbook.",
+        },
+        {
+            "type": "Course",
+            "name": "Quality 101: CQIA Certification Preparation",
+            "provider": "American Society for Quality",
+            "url": "https://asq.org/training/quality-101--certified-quality-improvement-associate-certification-preparation-spcqia2020asq",
+            "fit": "Official introductory quality course aligned with the CQIA body of knowledge.",
+            "eligibility": "ASQ lists no prerequisite; course completion does not guarantee exam success.",
+        },
+    ],
+    "customer_experience_manager": [
+        {
+            "type": "Certification",
+            "name": "Certified Customer Experience Professional (CCXP)",
+            "provider": "Customer Experience Professionals Association",
+            "url": "https://cxpaglobal.org/get-certified/get-started",
+            "fit": "Validates experience across customer strategy, culture, insights, design, and measurement.",
+            "eligibility": "CXPA lists education-and-experience routes; this is intended for experienced CX practitioners.",
+        },
+        {
+            "type": "Course directory",
+            "name": "CXPA Recognized Training Providers",
+            "provider": "Customer Experience Professionals Association",
+            "url": "https://cxpaglobal.org/get-certified/recognized-training-providers",
+            "fit": "Lists independently reviewed providers whose training aligns with the CXPA framework.",
+            "eligibility": "Training is supplementary and does not replace CCXP experience or examination requirements.",
+        },
+    ],
+    "ux_researcher": [
+        {
+            "type": "Professional certificate",
+            "name": "Google UX Design Certificate",
+            "provider": "Google",
+            "url": "https://grow.google/certificates/ux-design/",
+            "fit": "Covers user research, accessibility, wireframes, prototypes, usability testing, and portfolio work.",
+            "eligibility": "Google describes it as foundational and requiring no previous experience.",
+        },
+        {
+            "type": "Certification",
+            "name": "UX Certification",
+            "provider": "Nielsen Norman Group",
+            "url": "https://www.nngroup.com/ux-certification/",
+            "fit": "Course- and exam-based professional development across UX research and design topics.",
+            "eligibility": "Review the current course-count, examination, pricing, and delivery requirements directly with NN/g.",
+        },
+    ],
+}
+
+
+UNIVERSAL_AI_COURSE = {
+    "type": "AI course",
+    "name": "Transform business workflows with generative AI",
+    "provider": "Microsoft Learn",
+    "url": "https://learn.microsoft.com/en-us/training/courses/ab-730t00",
+    "fit": "A beginner, no-code course on applying generative AI to workflows, decisions, and business outcomes.",
+    "eligibility": "Designed for business users across functions; confirm current product-access and delivery requirements.",
+}
+
+
+LEGACY_LEADERSHIP_PATHWAYS: dict[str, dict[str, Any]] = {
     "data_bi_analyst": {
         "title": "Data & Business Intelligence Leadership Pathway",
         "summary": (
@@ -1416,6 +1945,30 @@ LEADERSHIP_PATHWAYS: dict[str, dict[str, Any]] = {
         ),
         "core_skills": ["finance", "data_analytics"],
     },
+    "laboratory_quality_specialist": {
+        "title": "Laboratory & Scientific Operations Leadership Pathway",
+        "summary": (
+            "Build from chemistry or laboratory practice toward supervision of "
+            "scientific work, laboratory quality, safety, compliance, and defensible "
+            "technical decisions."
+        ),
+        "progression": (
+            "Senior Chemist or Laboratory Analyst → Laboratory Supervisor or Quality "
+            "Lead → Laboratory Manager or Head of Chemical Laboratory"
+        ),
+        "focus": (
+            "Strengthen method and quality-system ownership, laboratory safety, "
+            "technical review, coaching, workload decisions, ethical escalation, and "
+            "accountability under Philippine chemistry requirements."
+        ),
+        "proof": (
+            "Lead a bounded laboratory-quality or safety improvement using sanitized "
+            "information. Document the problem, applicable procedure or standard, "
+            "contributors, risk decision, controlled change, verification result, and "
+            "management follow-through."
+        ),
+        "core_skills": ["scientific_laboratory"],
+    },
     "customer_experience_manager": {
         "title": "Customer Experience Leadership Pathway",
         "summary": (
@@ -1472,61 +2025,33 @@ def generate_synthetic_profiles(
     seed: int = SEED,
     per_career: int = SYNTHETIC_PROFILES_PER_CAREER,
 ) -> pd.DataFrame:
-    """Generate a larger, overlapping teaching set from documented assumptions."""
+    """Generate balanced, overlapping profiles using only skills and experience."""
 
     rng = np.random.default_rng(seed)
     rows: list[dict[str, Any]] = []
     profile_number = 1
-    career_ids = list(PROTOTYPES)
-    role_ids = list(CURRENT_ROLES)
+    career_ids = list(JOB_PROTOTYPES)
 
-    for career_index, (career_id, prototype) in enumerate(PROTOTYPES.items()):
-        adjacent = PROTOTYPES[career_ids[(career_index + 1) % len(career_ids)]]
+    for career_index, (career_id, prototype) in enumerate(JOB_PROTOTYPES.items()):
+        adjacent = JOB_PROTOTYPES[
+            career_ids[(career_index + 1) % len(career_ids)]
+        ]
         for _ in range(per_career):
-            industry = (
-                rng.choice(prototype["industries"])
-                if rng.random() < 0.76
-                else rng.choice(list(INDUSTRIES))
+            # Some profiles blend with a neighboring job family to create
+            # realistic ambiguity instead of perfectly separated classes.
+            blend = (
+                float(rng.uniform(0.08, 0.30))
+                if rng.random() < 0.32
+                else 0.0
             )
-            role_draw = rng.random()
-            if role_draw < 0.76:
-                current_role = str(rng.choice(prototype["current_roles"]))
-            elif role_draw < 0.92:
-                current_role = str(rng.choice(adjacent["current_roles"]))
-            else:
-                current_role = str(rng.choice(role_ids))
-            current_job_title = str(
-                rng.choice(CURRENT_ROLES[current_role]["titles"])
-            )
-
-            # A minority of profiles blend with a neighboring pathway. This
-            # creates more realistic overlap than ten perfectly separated clusters.
-            blend = float(rng.uniform(0.08, 0.28)) if rng.random() < 0.30 else 0.0
             experience_center = (
                 prototype["experience"] * (1 - blend)
                 + adjacent["experience"] * blend
             )
-            leadership_center = (
-                prototype["leadership"] * (1 - blend)
-                + adjacent["leadership"] * blend
-            )
-            years = float(
-                np.clip(rng.normal(experience_center, 2.0), 0, 25)
-            )
-            leadership = float(
-                np.clip(
-                    rng.normal(leadership_center, 1.0),
-                    0,
-                    min(15, years),
-                )
-            )
+            years = float(np.clip(rng.normal(experience_center, 2.4), 0, 30))
             row: dict[str, Any] = {
-                "profile_id": f"PH-{profile_number:03d}",
-                "current_industry": str(industry),
-                "current_role": current_role,
-                "current_job_title": current_job_title,
+                "profile_id": f"SKILL-{profile_number:04d}",
                 "years_experience": round(years, 1),
-                "leadership_years": round(leadership, 1),
             }
             for skill_index, (skill, center) in enumerate(
                 zip(SKILLS, prototype["skills"])
@@ -1538,9 +2063,7 @@ def generate_synthetic_profiles(
                 # Zero represents no experience with the skill. It is more
                 # common for low-adjacency skills, while every pathway can
                 # still contain a small number of genuine beginners.
-                no_experience_probability = (
-                    0.03 + 0.20 * (1 - mixed_center) ** 2
-                )
+                no_experience_probability = 0.02 + 0.18 * (1 - mixed_center) ** 2
                 row[skill] = (
                     0
                     if rng.random() < no_experience_probability
@@ -1553,102 +2076,13 @@ def generate_synthetic_profiles(
             profile_number += 1
 
     frame = pd.DataFrame(rows)
-    expected_rows = len(PROTOTYPES) * per_career
+    expected_rows = len(JOB_PROTOTYPES) * per_career
     if (
         len(frame) != expected_rows
         or not frame["recommended_career"].value_counts().eq(per_career).all()
     ):
         raise RuntimeError("Synthetic data integrity check failed.")
     return frame
-
-
-def _one_hot_encoder() -> OneHotEncoder:
-    try:
-        return OneHotEncoder(handle_unknown="ignore", sparse_output=False)
-    except TypeError:  # scikit-learn < 1.2
-        return OneHotEncoder(handle_unknown="ignore", sparse=False)
-
-
-def leadership_readiness_for(
-    profile: dict[str, Any],
-    skill_fit: float,
-) -> float:
-    """Return a transparent, synthetic leadership-readiness index."""
-
-    experience_signal = min(float(profile["years_experience"]) / 8, 1.0)
-    formal_leadership_signal = min(float(profile["leadership_years"]) / 3, 1.0)
-    transferable_signal = (
-        0.40 * float(profile["communication"]) / 5
-        + 0.35 * float(profile["project_management"]) / 5
-        + 0.25 * float(profile["people_hr"]) / 5
-    )
-    general_readiness = (
-        0.20 * experience_signal
-        + 0.45 * formal_leadership_signal
-        + 0.35 * transferable_signal
-    )
-    return float(np.clip(0.75 * general_readiness + 0.25 * skill_fit, 0, 1))
-
-
-def leadership_stage_for(
-    profile: dict[str, Any],
-    readiness: float,
-) -> dict[str, str]:
-    """Describe an investigation stage without claiming promotion readiness."""
-
-    leadership_years = float(profile["leadership_years"])
-    if leadership_years >= 3 and readiness >= 0.72:
-        return {
-            "label": "Investigate manager-level opportunities",
-            "insight": (
-                "Your profile shows sustained leadership exposure and stronger "
-                "transferable signals. Validate scope, people responsibility, and "
-                "decision authority against current job descriptions and references."
-            ),
-        }
-    if leadership_years >= 1 and readiness >= 0.55:
-        return {
-            "label": "Investigate lead or senior-lead opportunities",
-            "insight": (
-                "Your profile suggests a bridge through workstream ownership, mentoring, "
-                "or a formal lead role before assuming full manager accountability."
-            ),
-        }
-    return {
-        "label": "Build a leadership bridge first",
-        "insight": (
-            "The selected direction is leadership, but the profile does not yet show "
-            "enough sustained leadership evidence for this prototype to imply immediate "
-            "manager readiness. Build proof through a bounded initiative, mentoring, "
-            "decision ownership, and measurable team or stakeholder outcomes."
-        ),
-    }
-
-
-def leadership_gaps_for(
-    profile: dict[str, Any],
-    limit: int = 3,
-) -> list[dict[str, Any]]:
-    """Prioritize transparent leadership-building targets for this teaching tool."""
-
-    targets = {
-        "communication": 4,
-        "project_management": 4,
-        "people_hr": 3,
-        "operations": 3,
-    }
-    gaps = [
-        {
-            "skill": skill,
-            "label": SKILLS[skill]["label"],
-            "current": float(profile[skill]),
-            "target": target,
-            "gap": target - float(profile[skill]),
-        }
-        for skill, target in targets.items()
-        if target - float(profile[skill]) > 0
-    ]
-    return sorted(gaps, key=lambda item: item["gap"], reverse=True)[:limit]
 
 
 @dataclass
@@ -1659,41 +2093,22 @@ class CareerEngine:
     @classmethod
     def train(cls) -> "CareerEngine":
         profiles = generate_synthetic_profiles()
-        preprocessor = ColumnTransformer(
-            transformers=[
-                ("numeric", StandardScaler(), NUMERIC_FEATURES),
-                ("industry", _one_hot_encoder(), CATEGORICAL_FEATURES),
-                (
-                    "job_title",
-                    TfidfVectorizer(
-                        lowercase=True,
-                        ngram_range=(1, 2),
-                        min_df=2,
-                        strip_accents="unicode",
-                    ),
-                    TEXT_FEATURE,
-                ),
-            ],
-            remainder="drop",
-        )
         model = Pipeline(
             [
-                ("preprocess", preprocessor),
+                ("scale", StandardScaler()),
                 (
                     "model",
-                    RandomForestClassifier(
-                        n_estimators=400,
-                        class_weight="balanced_subsample",
+                    ExtraTreesClassifier(
+                        n_estimators=500,
+                        class_weight="balanced",
+                        min_samples_leaf=2,
                         random_state=SEED,
                         n_jobs=-1,
                     ),
                 ),
             ]
         )
-        features = profiles[
-            CATEGORICAL_FEATURES + NUMERIC_FEATURES + [TEXT_FEATURE]
-        ]
-        model.fit(features, profiles["recommended_career"])
+        model.fit(profiles[NUMERIC_FEATURES], profiles["recommended_career"])
         return cls(model=model, synthetic_profiles=profiles)
 
     def recommend(
@@ -1702,199 +2117,219 @@ class CareerEngine:
         top_k: int = 3,
     ) -> list[dict[str, Any]]:
         validate_profile(profile)
-        input_frame = pd.DataFrame([profile])[
-            CATEGORICAL_FEATURES + NUMERIC_FEATURES + [TEXT_FEATURE]
-        ]
+        input_frame = pd.DataFrame([profile])[NUMERIC_FEATURES]
         probabilities = self.model.predict_proba(input_frame)[0]
         class_ids = self.model.named_steps["model"].classes_
         results: list[dict[str, Any]] = []
 
         for career_id, model_probability in zip(class_ids, probabilities):
-            career = CAREERS[str(career_id)]
+            career_id = str(career_id)
+            career = CAREERS[career_id]
+            prototype = JOB_PROTOTYPES[career_id]
             current = career["current_demand"]
             future = career["future_demand"]
-            targets = target_ratings(str(career_id))
-            skill_fit = 1 - np.mean(
-                [
-                    abs(float(profile[skill]) - target) / 5
-                    for skill, target in targets.items()
-                ]
+            skill_alignment = skill_alignment_for(profile, career_id)
+            core_skill_coverage = core_skill_coverage_for(profile, career_id)
+            experience_fit = float(
+                np.exp(
+                    -abs(
+                        float(profile["years_experience"])
+                        - float(prototype["experience"])
+                    )
+                    / max(3.0, float(prototype["experience"]) * 0.80)
+                )
             )
-            experience_fit = min(
-                1.0,
-                float(profile["years_experience"])
-                / max(career["min_experience"], 1),
-            )
-            industry_fit = (
-                1.0
-                if profile["current_industry"] in career["preferred_industries"]
-                else 0.55
-            )
-            role_fit = (
-                1.0
-                if profile["current_role"]
-                in PROTOTYPES[str(career_id)]["current_roles"]
-                else 0.35
-            )
-
-            is_leadership_goal = profile["goal"] == "leadership"
-            leadership_readiness = leadership_readiness_for(profile, skill_fit)
-            leadership_pathway_definition = LEADERSHIP_PATHWAYS[str(career_id)]
-            core_skill_fit = float(
-                np.mean(
-                    [
-                        float(profile[skill]) / 5
-                        for skill in leadership_pathway_definition["core_skills"]
+            ai_target = max(
+                0.20,
+                float(
+                    prototype["skills"][
+                        list(SKILLS).index("ai_automation")
                     ]
-                )
+                ),
             )
-            career_direction_fit = (
-                0.35 * role_fit
-                + 0.15 * industry_fit
-                + 0.20 * float(skill_fit)
-                + 0.20 * core_skill_fit
-                + 0.10 * leadership_readiness
+            ai_skill_coverage = min(
+                1.0,
+                (float(profile["ai_automation"]) / 5) / ai_target,
             )
-
-            goal_adjustment = 0.0
-            if profile["goal"] == "future_ready":
-                goal_adjustment = max(
-                    0.0,
-                    future["score"] - current["score"],
-                ) * 0.03
-            elif profile["goal"] == "sector_switch" and industry_fit < 1:
-                goal_adjustment = future["score"] * 0.03
-
-            if is_leadership_goal:
-                # Leadership is a direction-selection policy, not a synthetic
-                # promotion prediction. Career-direction fit carries 30% so the
-                # selected goal materially affects ranking and presentation.
-                score = 100 * min(
-                    1.0,
-                    0.25 * float(model_probability)
-                    + 0.15 * float(skill_fit)
-                    + 0.10 * role_fit
-                    + 0.06 * experience_fit
-                    + 0.04 * current["score"]
-                    + 0.06 * future["score"]
-                    + 0.04 * industry_fit
-                    + 0.30 * career_direction_fit,
-                )
-            else:
-                score = 100 * min(
-                    1.0,
-                    0.42 * float(model_probability)
-                    + 0.20 * float(skill_fit)
-                    + 0.05 * experience_fit
-                    + 0.14 * role_fit
-                    + 0.05 * current["score"]
-                    + 0.07 * future["score"]
-                    + 0.04 * industry_fit
-                    + goal_adjustment,
-                )
-
-            leadership_pathway = (
-                leadership_pathway_definition
-                if is_leadership_goal
-                else None
+            ai_competitiveness = (
+                0.45 * float(future["score"])
+                + 0.30 * float(current["score"])
+                + 0.25 * ai_skill_coverage
             )
+            score = 100 * (
+                0.50 * skill_alignment
+                + 0.15 * core_skill_coverage
+                + 0.15 * float(model_probability)
+                + 0.08 * experience_fit
+                + 0.05 * float(current["score"])
+                + 0.07 * float(future["score"])
+            )
+            learning_options = list(LEARNING_OPTIONS[career_id])
+            if not any(
+                option["url"] == UNIVERSAL_AI_COURSE["url"]
+                for option in learning_options
+            ):
+                learning_options.append(dict(UNIVERSAL_AI_COURSE))
+
             results.append(
                 {
-                    "career_id": str(career_id),
+                    "career_id": career_id,
                     "career": career["title"],
                     "summary": career["summary"],
-                    "display_career": (
-                        leadership_pathway["title"]
-                        if leadership_pathway
-                        else career["title"]
-                    ),
-                    "display_summary": (
-                        leadership_pathway["summary"]
-                        if leadership_pathway
-                        else career["summary"]
-                    ),
+                    "display_career": career["title"],
+                    "display_summary": career["summary"],
                     "recommendation_score": round(score, 1),
                     "synthetic_model_fit": round(
                         100 * float(model_probability),
                         1,
                     ),
-                    "skill_fit": round(100 * float(skill_fit), 1),
+                    "skill_alignment": round(100 * skill_alignment, 1),
+                    "core_skill_coverage": round(
+                        100 * core_skill_coverage,
+                        1,
+                    ),
                     "experience_fit": round(100 * experience_fit, 1),
-                    "industry_fit": round(100 * industry_fit, 1),
-                    "role_fit": round(100 * role_fit, 1),
-                    "career_direction_fit": round(
-                        100 * career_direction_fit,
+                    "ai_competitiveness": round(
+                        100 * ai_competitiveness,
                         1,
                     ),
-                    "core_skill_fit": round(100 * core_skill_fit, 1),
-                    "leadership_readiness": round(
-                        100 * leadership_readiness,
-                        1,
+                    "experience_guidance": experience_guidance_for(
+                        float(profile["years_experience"])
                     ),
-                    "leadership_stage": (
-                        leadership_stage_for(profile, leadership_readiness)
-                        if is_leadership_goal
-                        else None
-                    ),
-                    "leadership_pathway": leadership_pathway,
-                    "leadership_gaps": (
-                        leadership_gaps_for(profile)
-                        if is_leadership_goal
-                        else []
-                    ),
-                    "goal": profile["goal"],
-                    "skill_gaps": skill_gaps_for(profile, str(career_id)),
+                    "matched_skills": matched_skills_for(profile, career_id),
+                    "skill_gaps": skill_gaps_for(profile, career_id, limit=4),
+                    "application_contexts": prototype["application_contexts"],
+                    "learning_options": learning_options,
                     **career,
                 }
             )
 
-        return sorted(
+        ranked = sorted(
             results,
             key=lambda item: (
                 item["recommendation_score"],
                 item["synthetic_model_fit"],
             ),
             reverse=True,
-        )[:top_k]
+        )
+        supported = [
+            item
+            for item in ranked
+            if item["skill_alignment"] >= 40
+            and item["core_skill_coverage"] >= 25
+            and item["recommendation_score"] >= 55
+        ]
+        if not supported:
+            raise ValueError(
+                "The app could not find a sufficiently close job match in its "
+                "current catalog. It has abstained instead of forcing an unrelated "
+                "recommendation. Add only skills you can demonstrate, or treat your "
+                "target occupation as outside the present catalog."
+            )
+        return supported[:top_k]
 
 
 def validate_profile(profile: dict[str, Any]) -> None:
-    expected = CATEGORICAL_FEATURES + NUMERIC_FEATURES + [TEXT_FEATURE, "goal"]
+    expected = NUMERIC_FEATURES
     missing = [field for field in expected if field not in profile]
     if missing:
         raise ValueError(f"Missing profile fields: {', '.join(missing)}")
-    if profile["current_industry"] not in INDUSTRIES:
-        raise ValueError("Please select a listed industry.")
-    if profile["current_role"] not in CURRENT_ROLES:
-        raise ValueError("Please select a listed current-role family.")
-    if len(str(profile["current_job_title"]).strip()) < 2:
-        raise ValueError("Please enter your current job title.")
-    if profile["goal"] not in CAREER_GOALS:
-        raise ValueError("Please select a listed career goal.")
     years = float(profile["years_experience"])
-    leadership = float(profile["leadership_years"])
     if not 0 <= years <= 50:
         raise ValueError("Years of experience must be between 0 and 50.")
-    if not 0 <= leadership <= years:
-        raise ValueError(
-            "Years leading others cannot be greater than total work experience."
-        )
     for skill in SKILLS:
         if not 0 <= float(profile[skill]) <= 5:
             raise ValueError(f"{SKILLS[skill]['label']} must be between 0 and 5.")
+    if not any(float(profile[skill]) > 0 for skill in SKILLS):
+        raise ValueError(
+            "Rate at least one skill above 0 so the app has evidence to match."
+        )
 
 
 def target_ratings(career_id: str) -> dict[str, int]:
     return {
-        skill: int(np.clip(np.rint(1 + 4 * center), 1, 5))
-        for skill, center in zip(SKILLS, PROTOTYPES[career_id]["skills"])
+        skill: int(np.clip(np.rint(5 * center), 1, 5))
+        for skill, center in zip(SKILLS, JOB_PROTOTYPES[career_id]["skills"])
     }
+
+
+def skill_alignment_for(profile: dict[str, Any], career_id: str) -> float:
+    user = np.array([float(profile[skill]) / 5 for skill in SKILLS])
+    target = np.array(JOB_PROTOTYPES[career_id]["skills"], dtype=float)
+    if float(np.linalg.norm(user)) == 0:
+        return 0.0
+    cosine = float(
+        np.dot(user, target)
+        / (float(np.linalg.norm(user)) * float(np.linalg.norm(target)))
+    )
+    coverage = float(np.minimum(user, target).sum() / target.sum())
+    return float(np.clip(0.65 * cosine + 0.35 * coverage, 0, 1))
+
+
+def core_skill_coverage_for(profile: dict[str, Any], career_id: str) -> float:
+    prototype = JOB_PROTOTYPES[career_id]
+    target_by_skill = dict(zip(SKILLS, prototype["skills"]))
+    coverage = [
+        min(
+            1.0,
+            (float(profile[skill]) / 5)
+            / max(0.20, float(target_by_skill[skill])),
+        )
+        for skill in prototype["core_skills"]
+    ]
+    return float(np.mean(coverage))
+
+
+def matched_skills_for(
+    profile: dict[str, Any],
+    career_id: str,
+    limit: int = 4,
+) -> list[dict[str, Any]]:
+    targets = target_ratings(career_id)
+    matches = [
+        {
+            "skill": skill,
+            "label": SKILLS[skill]["label"],
+            "current": float(profile[skill]),
+            "target": target,
+            "matched": min(float(profile[skill]), float(target)),
+        }
+        for skill, target in targets.items()
+        if float(profile[skill]) > 0
+    ]
+    return sorted(
+        matches,
+        key=lambda item: (item["matched"], item["current"]),
+        reverse=True,
+    )[:limit]
+
+
+def experience_guidance_for(years: float) -> str:
+    if years < 2:
+        return (
+            "Investigate internships, apprenticeships, associate, coordinator, "
+            "or junior versions of this job family."
+        )
+    if years < 5:
+        return (
+            "Investigate analyst or specialist roles and validate the required "
+            "domain experience in current job descriptions."
+        )
+    if years < 8:
+        return (
+            "Investigate experienced analyst, senior specialist, or workstream-lead "
+            "roles; title seniority still depends on demonstrated scope."
+        )
+    return (
+        "Investigate senior specialist, lead, consulting, or management-adjacent "
+        "roles, while validating domain depth and leadership requirements."
+    )
 
 
 def skill_gaps_for(
     profile: dict[str, Any],
     career_id: str,
-    limit: int = 3,
+    limit: int = 4,
 ) -> list[dict[str, Any]]:
     targets = target_ratings(career_id)
     gaps = [

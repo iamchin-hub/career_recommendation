@@ -7,11 +7,8 @@ from io import StringIO
 import streamlit as st
 
 from career_engine import (
-    CAREER_GOALS,
-    CURRENT_ROLES,
     DATASET_VERSION,
     EVIDENCE_CHECKED,
-    INDUSTRIES,
     MODEL_NAME,
     SKILLS,
     SOURCES,
@@ -21,7 +18,7 @@ from career_engine import (
     CareerEngine,
 )
 
-APP_BUILD_ID = "2026.07.28-leadership-direction-v3"
+APP_BUILD_ID = "2026.07.28-skills-first-v5"
 ENGINE_CACHE_KEY = f"{DATASET_VERSION}:{APP_BUILD_ID}"
 
 
@@ -495,7 +492,7 @@ st.markdown(
 )
 
 
-@st.cache_resource(show_spinner="Training the 1,000-profile synthetic model…")
+@st.cache_resource(show_spinner="Training the 2,200-profile skills-first model…")
 def load_engine(cache_key: str) -> CareerEngine:
     """Train once per explicit app/model build so deployments cannot reuse stale logic."""
     del cache_key
@@ -512,11 +509,10 @@ def source_links(source_keys: list[str]) -> None:
 
 
 def render_recommendation(result: dict, rank: int) -> None:
-    is_leadership_pathway = result.get("leadership_pathway") is not None
     st.markdown(
         f"""
         <div class="role-head">
-          <span class="eyebrow">Recommendation {rank}</span>
+          <span class="eyebrow">Skills-based match {rank}</span>
           <h3>{result["display_career"]}</h3>
           <p>{result["display_summary"]}</p>
         </div>
@@ -526,139 +522,81 @@ def render_recommendation(result: dict, rank: int) -> None:
 
     score_col, second_col, third_col, role_col = st.columns(4)
     score_col.metric(
-        "Comparative score",
+        "Comparative match",
         f"{result['recommendation_score']:.1f}/100",
     )
-    if is_leadership_pathway:
-        second_col.metric(
-            "Career-direction fit",
-            f"{result['career_direction_fit']:.1f}%",
-        )
-        third_col.metric(
-            "Leadership-readiness index",
-            f"{result['leadership_readiness']:.1f}%",
-        )
-        role_col.metric(
-            "Current-role relevance",
-            f"{result['role_fit']:.1f}%",
-        )
-        st.caption(
-            f"Underlying domain signals: synthetic model fit "
-            f"{result['synthetic_model_fit']:.1f}% · skill fit "
-            f"{result['skill_fit']:.1f}% · core-skill foundation "
-            f"{result['core_skill_fit']:.1f}%. Leadership readiness and "
-            "career-direction fit are transparent teaching indices—not promotion "
-            "probabilities."
-        )
-    else:
-        second_col.metric(
-            "Synthetic model fit",
-            f"{result['synthetic_model_fit']:.1f}%",
-        )
-        third_col.metric(
-            "Skill fit index",
-            f"{result['skill_fit']:.1f}%",
-        )
-        role_col.metric(
-            "Current-role relevance",
-            f"{result['role_fit']:.1f}%",
-        )
+    second_col.metric(
+        "Skill alignment",
+        f"{result['skill_alignment']:.1f}%",
+    )
+    third_col.metric(
+        "Core-skill coverage",
+        f"{result['core_skill_coverage']:.1f}%",
+    )
+    role_col.metric(
+        "AI-era relevance",
+        f"{result['ai_competitiveness']:.1f}%",
+    )
     st.caption(
-        "These are ranking indices—not probabilities of getting hired, succeeding, "
-        "or earning a particular salary."
+        f"Supporting indices: synthetic model fit "
+        f"{result['synthetic_model_fit']:.1f}% · experience proximity "
+        f"{result['experience_fit']:.1f}%. These are comparative teaching "
+        "indices—not hiring, success, salary, or job-availability probabilities."
     )
 
-    overview_tab, ai_tab, skills_tab, credential_tab = st.tabs(
-        ["Why this move", "AI-era opportunity", "Skill-building", "Certification"]
+    overview_tab, ai_tab, skills_tab, learning_tab, evidence_tab = st.tabs(
+        [
+            "Why this job fits",
+            "AI-era relevance",
+            "Skills to build",
+            "Certifications & courses",
+            "Research evidence",
+        ]
     )
 
     with overview_tab:
-        if is_leadership_pathway:
-            pathway = result["leadership_pathway"]
-            stage = result["leadership_stage"]
-            st.subheader("Career-direction fit")
-            st.markdown(f"**Suggested investigation stage: {stage['label']}**")
-            st.write(stage["insight"])
-            st.markdown(f"**Illustrative progression:** {pathway['progression']}")
-            st.markdown(f"**Leadership focus:** {pathway['focus']}")
-            core_skill_labels = ", ".join(
-                SKILLS[skill]["label"] for skill in pathway["core_skills"]
-            )
+        st.subheader("Skills you can already leverage")
+        for match in result["matched_skills"]:
             st.markdown(
-                f"**Core domain foundation considered:** {core_skill_labels} "
-                f"({result['core_skill_fit']:.1f}%)"
+                f"- **{match['label']}** — your rating "
+                f"{match['current']:g}/5; prototype target "
+                f"{match['target']}/5"
             )
-            st.info(
-                "This progression is a direction to investigate—not a universal "
-                "promotion ladder, an open-vacancy claim, or evidence that you are "
-                "ready for the final title today."
+        st.subheader("Experience-level interpretation")
+        st.write(result["experience_guidance"])
+        st.subheader("Where this job family is applied")
+        st.markdown(
+            "\n".join(
+                f"- {context}" for context in result["application_contexts"]
             )
-            st.divider()
-
-        current_col, future_col = st.columns(2)
-        with current_col:
-            st.subheader("Current demand")
-            st.markdown(
-                f"**{result['current_demand']['label']} · "
-                f"{result['current_demand']['basis']}**"
-            )
-            st.write(result["current_demand"]["insight"])
-            with st.expander("Current-demand sources"):
-                source_links(result["current_demand"]["sources"])
-        with future_col:
-            st.subheader("Future demand")
-            st.markdown(
-                f"**{result['future_demand']['label']} · "
-                f"{result['future_demand']['basis']}**"
-            )
-            st.write(result["future_demand"]["insight"])
-            with st.expander("Future-demand sources"):
-                source_links(result["future_demand"]["sources"])
+        )
+        st.caption(
+            "These are cross-industry application contexts, not claims of live "
+            "vacancies in a particular employer, location, or salary band."
+        )
 
     with ai_tab:
-        st.subheader("How AI can expand the role")
+        st.subheader("Why this work remains relevant as AI spreads")
+        st.write(result["future_demand"]["insight"])
+        st.subheader("How AI can augment the role")
         st.write(result["ai_opportunity"])
-        st.subheader("The human advantage")
+        st.subheader("Human accountability that remains important")
         st.write(result["human_edge"])
-        if is_leadership_pathway:
-            st.subheader("A leadership proof to build")
-            st.info(result["leadership_pathway"]["proof"])
-            st.caption(
-                "Use sanitized or synthetic material. Do not disclose employer, "
-                "employee, customer, financial, or security-sensitive information."
-            )
-        else:
-            st.subheader("A practical portfolio proof")
-            st.info(result["first_proof"])
+        st.subheader("A practical proof to build")
+        st.info(result["first_proof"])
+        st.caption(
+            "Use sanitized, public, or synthetic material. Never disclose employer, "
+            "customer, employee, financial, health, security, or laboratory-sensitive data."
+        )
 
     with skills_tab:
-        if is_leadership_pathway:
-            st.subheader("Leadership-building priorities")
-            if result["leadership_gaps"]:
-                for gap in result["leadership_gaps"]:
-                    st.markdown(
-                        f"- **{gap['label']}** — your rating "
-                        f"{gap['current']:g}/5; prototype leadership target "
-                        f"{gap['target']}/5"
-                    )
-            else:
-                st.success(
-                    "Your self-ratings meet this prototype's transferable leadership "
-                    "targets. Validate them with observed work outcomes and feedback."
-                )
-            st.caption(
-                "These targets are transparent design assumptions for this teaching "
-                "tool—not employer requirements, occupational standards, or proof of "
-                "manager readiness."
-            )
-            st.divider()
-
-        st.subheader("Priority gaps against the demo target")
+        st.subheader("Highest-priority gaps")
         if result["skill_gaps"]:
             for gap in result["skill_gaps"]:
                 st.markdown(
                     f"- **{gap['label']}** — your rating "
-                    f"{gap['current']:g}/5; demo target {gap['target']}/5"
+                    f"{gap['current']:g}/5; synthetic job-family target "
+                    f"{gap['target']}/5"
                 )
         else:
             st.success(
@@ -667,35 +605,53 @@ def render_recommendation(result: dict, rank: int) -> None:
             )
         st.caption(
             "Targets come from documented synthetic role prototypes. They are not "
-            "employer requirements or occupational standards."
+            "employer requirements or occupational standards. Validate gaps against "
+            "several current job descriptions before paying for training."
         )
 
-    with credential_tab:
-        credential = result["certification"]
-        if is_leadership_pathway:
-            st.info(
-                "This credential supports technical or domain credibility for the "
-                "pathway. It does not certify leadership ability or guarantee a "
-                "lead, manager, or promotion outcome."
+    with learning_tab:
+        st.info(
+            "These are options to investigate, not mandatory requirements. A "
+            "credential does not guarantee employment, promotion, salary, or skill."
+        )
+        for option in result["learning_options"]:
+            st.subheader(option["name"])
+            st.markdown(
+                f"**{option['type']} · Official provider: "
+                f"{option['provider']}**"
             )
-        st.subheader(credential["name"])
-        st.markdown(f"**Official provider:** {credential['issuer']}")
-        st.write(credential["why_it_fits"])
-        st.markdown(f"**Eligibility note:** {credential['eligibility']}")
-        st.link_button(
-            "Open the official certification page ↗",
-            credential["url"],
-            use_container_width=True,
+            st.write(option["fit"])
+            st.markdown(f"**Eligibility or access note:** {option['eligibility']}")
+            st.link_button(
+                f"Open official {option['provider']} page ↗",
+                option["url"],
+                use_container_width=True,
+            )
+            st.divider()
+
+    with evidence_tab:
+        current_col, future_col = st.columns(2)
+        with current_col:
+            st.subheader("Current-demand evidence")
+            st.markdown(
+                f"**{result['current_demand']['label']} · "
+                f"{result['current_demand']['basis']}**"
+            )
+            st.write(result["current_demand"]["insight"])
+            source_links(result["current_demand"]["sources"])
+        with future_col:
+            st.subheader("Future-demand evidence")
+            st.markdown(
+                f"**{result['future_demand']['label']} · "
+                f"{result['future_demand']['basis']}**"
+            )
+            st.write(result["future_demand"]["insight"])
+            source_links(result["future_demand"]["sources"])
+        st.warning(
+            "Demand grades are editorial summaries of cited sources—not live "
+            "vacancy counts, Philippine salary forecasts, or guarantees that a "
+            "specific employer is hiring."
         )
-        st.divider()
-        st.markdown(f"**Practitioner evidence:** {credential['practitioner']}")
-        st.caption(credential["source_type"])
-        st.write(credential["practitioner_insight"])
-        st.markdown(
-            f"[Read the original account or survey ↗]"
-            f"({credential['practitioner_url']})"
-        )
-        st.warning(credential["caveat"])
 
 
 st.html(
@@ -722,9 +678,9 @@ st.html(
             <div class="hero-kicker">Career intelligence for Filipino professionals</div>
             <h1>Your next move.<br/>Built for the AI era.</h1>
             <p>
-              Turn your current job, industry experience, and transferable skills
-              into three evidence-linked career hypotheses—with an AI opportunity,
-              a practical portfolio proof, and an official credential to investigate.
+              Match your demonstrated skills and total experience to the closest
+              cross-industry job families—then investigate research-linked demand,
+              AI-era work patterns, priority skill gaps, and official learning options.
             </p>
             <div class="hero-actions">
               <button class="hero-primary" type="button"
@@ -754,15 +710,15 @@ st.html(
             <strong>Explore. Verify. Build.</strong>
             <span>A decision aid—not a career guarantee.</span>
           </div>
-          <div class="proof-chip">1,000 synthetic<br/>learning profiles</div>
-          <div class="proof-chip">10 career<br/>pathways</div>
-          <div class="proof-chip">Research + official<br/>credential links</div>
+          <div class="proof-chip">2,200 synthetic<br/>skill profiles</div>
+          <div class="proof-chip">11 career<br/>pathways</div>
+          <div class="proof-chip">12 transferable<br/>skill signals</div>
         </section>
         <div class="truth-note">
-          <strong>Research prototype:</strong> the model now learns from 1,000
-          diverse—but still synthetic—profiles. More simulated rows make the
-          patterns less repetitive; they do not create real-world evidence or prove
-          career outcomes. Do not use these results for hiring, promotion,
+          <strong>Research prototype:</strong> industry, employer, current title,
+          demographics, and protected characteristics are not model inputs. The model
+          learns from synthetic skills and experience only; research claims come from
+          a fixed source registry. Do not use results for hiring, promotion,
           redundancy, compensation, or another high-impact decision.
         </div>
     </div>
@@ -831,46 +787,14 @@ engine = load_engine(ENGINE_CACHE_KEY)
 
 with input_tab:
     st.markdown('<span id="career-scan"></span>', unsafe_allow_html=True)
-    st.header("Tell us what you can demonstrate today")
+    st.header("Map the skills you can demonstrate today")
     st.write(
         "Use the 0–5 skill scale honestly: 0 means no experience with the skill; "
         "1 means new to the skill; 5 means you can independently deliver strong "
-        "work and explain your decisions."
+        "work and explain your decisions. Industry and current job title are not used."
     )
     with st.form("career_profile"):
-        title_col, role_col = st.columns([1.15, 1])
-        with title_col:
-            current_job_title = st.text_input(
-                "Current job title",
-                value="",
-                placeholder="",
-                help=(
-                    "The model uses words in your job title together with the "
-                    "closest role family selected beside it."
-                ),
-            )
-        with role_col:
-            current_role = st.selectbox(
-                "Closest current-role family",
-                options=list(CURRENT_ROLES),
-                index=None,
-                placeholder="",
-                format_func=lambda role: CURRENT_ROLES[role]["label"],
-                help=(
-                    "Choose the family that best represents your present work, "
-                    "even if your exact title is different."
-                ),
-            )
-
-        context_col, experience_col, leadership_col, goal_col = st.columns(4)
-        with context_col:
-            industry = st.selectbox(
-                "Current industry",
-                options=list(INDUSTRIES),
-                index=None,
-                placeholder="",
-                format_func=INDUSTRIES.get,
-            )
+        experience_col, explanation_col = st.columns([1, 2.5])
         with experience_col:
             years_experience = st.number_input(
                 "Total years of work experience",
@@ -878,22 +802,16 @@ with input_tab:
                 max_value=50.0,
                 value=0.0,
                 step=0.5,
+                help=(
+                    "Used only to suggest an appropriate investigation level. "
+                    "It does not prove seniority or readiness."
+                ),
             )
-        with leadership_col:
-            leadership_years = st.number_input(
-                "Years leading people or major work",
-                min_value=0.0,
-                max_value=50.0,
-                value=0.0,
-                step=0.5,
-            )
-        with goal_col:
-            goal = st.selectbox(
-                "Main career goal",
-                options=list(CAREER_GOALS),
-                index=None,
-                placeholder="",
-                format_func=CAREER_GOALS.get,
+        with explanation_col:
+            st.info(
+                "Your match is driven by skill alignment first. Experience, "
+                "synthetic model fit, and dated demand evidence have smaller weights. "
+                "No industry advantage or penalty is applied."
             )
 
         st.subheader("Self-assess your transferable skills")
@@ -905,7 +823,7 @@ with input_tab:
                     skill["label"],
                     min_value=0,
                     max_value=5,
-                    value=3,
+                    value=0,
                     help=(
                         "0 = no experience; 1 = new to the skill; "
                         f"5 = independently proficient. Examples: {skill['hint']}."
@@ -914,84 +832,62 @@ with input_tab:
                 )
 
         submitted = st.form_submit_button(
-            "Show my three career moves",
+            "Show my supported career moves",
             type="primary",
             use_container_width=True,
         )
 
     st.caption(
-        "Privacy: this demo does not ask for your name, age, employer, résumé, or "
-        "protected characteristics. Inputs remain only in the current app session. "
+        "Privacy: this demo does not ask for your name, age, employer, résumé, "
+        "industry, current title, or protected characteristics. Inputs remain only "
+        "in the current app session. "
         f"Build: {APP_BUILD_ID}."
     )
 
     if submitted:
-        missing_fields = [
-            label
-            for label, value in (
-                ("Current job title", current_job_title.strip()),
-                ("Closest current-role family", current_role),
-                ("Current industry", industry),
-                ("Main career goal", goal),
-            )
-            if value in (None, "")
-        ]
-        if missing_fields:
+        profile = {
+            "years_experience": years_experience,
+            **skill_values,
+        }
+        try:
+            st.session_state["recommendations"] = engine.recommend(profile)
+            st.session_state["profile"] = profile
+        except ValueError as error:
             st.session_state.pop("recommendations", None)
             st.session_state.pop("profile", None)
-            st.error(
-                "Complete these required fields before requesting recommendations: "
-                + ", ".join(missing_fields)
-                + "."
-            )
-        else:
-            profile = {
-                "current_industry": industry,
-                "current_role": current_role,
-                "current_job_title": current_job_title.strip(),
-                "years_experience": years_experience,
-                "leadership_years": leadership_years,
-                "goal": goal,
-                **skill_values,
-            }
-            try:
-                st.session_state["recommendations"] = engine.recommend(profile)
-                st.session_state["profile"] = profile
-            except ValueError as error:
-                error_message = str(error)
-                if (
-                    "must be between 1 and 5" in error_message
-                    and any(value == 0 for value in skill_values.values())
-                ):
-                    st.error(
-                        "This server is still using an outdated cached model. "
-                        f"Expected build: {APP_BUILD_ID}. Reboot the Streamlit app "
-                        "once, then submit the profile again."
-                    )
-                else:
-                    st.error(error_message)
+            st.error(str(error))
 
     if "recommendations" in st.session_state:
+        recommendations = st.session_state["recommendations"]
         st.divider()
-        st.header("Your three next-move hypotheses")
+        if len(recommendations) == 3:
+            st.header("Your three closest skills-based job matches")
+        elif len(recommendations) == 1:
+            st.header("Your closest supported job match")
+        else:
+            st.header(f"Your {len(recommendations)} closest supported job matches")
         st.write(
-            "Treat these as options to investigate through conversations, work "
-            "samples, and current job postings—not as instructions."
+            "Treat these as job families to investigate through current postings, "
+            "practitioner conversations, work samples, and official training pages."
         )
+        if len(recommendations) < 3:
+            st.warning(
+                "The app found fewer than three sufficiently supported pathways. "
+                "It omitted lower-fit results instead of filling the list with "
+                "unrelated careers."
+            )
         saved_profile = st.session_state.get("profile", {})
         if saved_profile:
             st.caption(
-                "Profile signal used: "
-                f"{saved_profile['current_job_title']} · "
-                f"{CURRENT_ROLES[saved_profile['current_role']]['label']} · "
-                f"{INDUSTRIES[saved_profile['current_industry']]} · Goal: "
-                f"{CAREER_GOALS[saved_profile['goal']]}"
+                f"Profile signal used: {saved_profile['years_experience']:g} years "
+                f"of experience · {sum(value > 0 for key, value in saved_profile.items() if key in SKILLS)} "
+                "skills rated above zero · no industry or current-title input"
             )
         recommendation_tabs = st.tabs(
             [
                 f"{rank}. {item['display_career']}"
                 for rank, item in enumerate(
-                    st.session_state["recommendations"],
+                    recommendations,
                     start=1,
                 )
             ]
@@ -1006,47 +902,32 @@ with input_tab:
 with method_tab:
     st.divider()
     st.markdown('<span id="how-it-works"></span>', unsafe_allow_html=True)
-    st.header("A transparent two-stage recommender")
+    st.header("A transparent skills-first recommender")
     st.markdown(
         f"""
-        1. **Synthetic model fit:** a {MODEL_NAME.lower()} classifier learns
+        1. **Skills-only synthetic model:** a {MODEL_NAME.lower()} classifier learns
            patterns from {len(engine.synthetic_profiles):,} seeded synthetic
-           profiles—{SYNTHETIC_PROFILES_PER_CAREER} per career pathway. Current
-           job title and current-role family are included alongside industry,
-           experience, and skills.
-        2. **Evidence reranking:** the app combines model fit with direct skill
-           fit, current-role relevance, experience, industry adjacency, and
-           dated demand grades.
+           profiles—{SYNTHETIC_PROFILES_PER_CAREER} per job family. Its only
+           features are total experience and the 12 self-rated skills.
+        2. **Transparent reranking:** direct skill alignment and coverage of each
+           job family's core skills carry most of the score. Experience proximity,
+           synthetic model fit, and dated demand grades have smaller weights.
+        3. **Fixed evidence lookup:** research, AI-era insights, official
+           certifications, and courses are retrieved from a reviewed registry.
+           They are not generated by the model.
 
         The reranking weights are:
 
-        - synthetic model fit: **42%**
-        - direct skill fit: **20%**
-        - current-role relevance: **14%**
-        - experience fit: **5%**
+        - direct skill alignment: **50%**
+        - career-specific core-skill coverage: **15%**
+        - synthetic model fit: **15%**
+        - experience proximity: **8%**
         - current-demand evidence grade: **5%**
         - future-demand evidence grade: **7%**
-        - industry adjacency: **4%**
-        - goal adjustment: **up to 3%**
 
-        When **Move toward leadership** is selected, the app uses a separate,
-        explicit policy so the goal is not a minor tie-breaker:
-
-        - career-direction fit: **30%**
-        - synthetic domain-model fit: **25%**
-        - direct domain-skill fit: **15%**
-        - current-role relevance: **10%**
-        - experience fit: **6%**
-        - current- and future-demand evidence: **10% combined**
-        - industry adjacency: **4%**
-
-        Career-direction fit combines role adjacency, industry adjacency, overall
-        domain-skill fit, career-specific core skills, and a leadership-readiness
-        index. This prevents a nearby job title from outweighing a self-reported
-        absence of the pathway's core skill. The readiness index uses total
-        experience, leadership experience, communication, project delivery, people
-        skills, and domain fit. These are declared design assumptions—not a
-        validated promotion model.
+        A result must also meet minimum skill-alignment and core-skill-coverage
+        thresholds. The app can return fewer than three matches or abstain instead
+        of filling the list with unrelated jobs.
         """
     )
     st.info(
@@ -1060,9 +941,9 @@ with method_tab:
     csv_buffer = StringIO()
     engine.synthetic_profiles.to_csv(csv_buffer, index=False)
     st.download_button(
-        "Download 1,000 synthetic profiles (.csv)",
+        f"Download {len(engine.synthetic_profiles):,} synthetic profiles (.csv)",
         data=csv_buffer.getvalue(),
-        file_name="hakbang_ph_1000_synthetic_profiles.csv",
+        file_name="hakbang_ph_2200_skills_first_profiles.csv",
         mime="text/csv",
     )
     st.caption(
@@ -1074,11 +955,11 @@ with method_tab:
             """
             - More synthetic rows reduce sampling noise but do not add real-world truth.
             - Self-assessed skills can be inconsistent.
-            - Job-title wording and role-family selection can be ambiguous.
             - Demand grades are ordinal editorial mappings, not live job counts.
             - Global evidence does not automatically describe every Philippine region.
-            - The catalogue contains only ten pathways and omits many valid careers.
-            - Practitioner accounts may contain selection and survivorship bias.
+            - The catalogue contains only eleven job families and omits many valid careers.
+            - The model has not been validated with real applicants or employment outcomes.
+            - Years of experience do not prove domain depth, leadership, or seniority.
             - Certification requirements, prices, and exam versions can change.
             """
         )
