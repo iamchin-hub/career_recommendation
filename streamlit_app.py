@@ -18,7 +18,7 @@ from career_engine import (
     CareerEngine,
 )
 
-APP_BUILD_ID = "2026.07.28-plain-guidance-v6"
+APP_BUILD_ID = "2026.07.28-zero-valid-v7"
 ENGINE_CACHE_KEY = f"{DATASET_VERSION}:{APP_BUILD_ID}"
 
 
@@ -882,6 +882,12 @@ with input_tab:
             )
 
         st.subheader("Self-assess your transferable skills")
+        st.info(
+            "**Zero is a valid, completed response.** Leave any skill at 0 when "
+            "you have no experience with it. You do not need to move every slider. "
+            "The app needs at least one honestly rated skill above 0 to compare "
+            "your profile with its job catalog."
+        )
         skill_columns = st.columns(3)
         skill_values: dict[str, int] = {}
         for index, (skill_key, skill) in enumerate(SKILLS.items()):

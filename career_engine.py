@@ -2942,11 +2942,19 @@ class CareerEngine:
             and item["recommendation_score"] >= 55
         ]
         if not supported:
+            positive_skill_count = sum(
+                float(profile[skill]) > 0 for skill in SKILLS
+            )
+            zero_skill_count = len(SKILLS) - positive_skill_count
             raise ValueError(
-                "The app could not find a sufficiently close job match in its "
-                "current catalog. It has abstained instead of forcing an unrelated "
-                "recommendation. Add only skills you can demonstrate, or treat your "
-                "target occupation as outside the present catalog."
+                f"Your {zero_skill_count} skill rating"
+                f"{'s are' if zero_skill_count != 1 else ' is'} valid at 0 and "
+                f"{'have' if zero_skill_count != 1 else 'has'} been treated as "
+                "\"no demonstrated experience.\" The skills you rated above 0 do "
+                "not yet overlap strongly enough with a job in the current catalog "
+                "to support a recommendation. The app has abstained instead of "
+                "forcing an unrelated match. You do not need to increase a rating "
+                "unless you can honestly demonstrate that skill."
             )
         return supported[:top_k]
 
@@ -2964,7 +2972,10 @@ def validate_profile(profile: dict[str, Any]) -> None:
             raise ValueError(f"{SKILLS[skill]['label']} must be between 0 and 5.")
     if not any(float(profile[skill]) > 0 for skill in SKILLS):
         raise ValueError(
-            "Rate at least one skill above 0 so the app has evidence to match."
+            "A rating of 0 is valid and means no demonstrated experience. However, "
+            "an all-zero profile contains no positive skill evidence for comparing "
+            "jobs. Rate at least one skill above 0 only if you can honestly "
+            "demonstrate it."
         )
 
 
