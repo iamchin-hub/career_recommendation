@@ -18,7 +18,7 @@ from career_engine import (
     CareerEngine,
 )
 
-APP_BUILD_ID = "2026.07.28-skills-first-v5"
+APP_BUILD_ID = "2026.07.28-plain-guidance-v6"
 ENGINE_CACHE_KEY = f"{DATASET_VERSION}:{APP_BUILD_ID}"
 
 
@@ -509,6 +509,7 @@ def source_links(source_keys: list[str]) -> None:
 
 
 def render_recommendation(result: dict, rank: int) -> None:
+    guidance = result["role_guidance"]
     st.markdown(
         f"""
         <div class="role-head">
@@ -555,15 +556,47 @@ def render_recommendation(result: dict, rank: int) -> None:
     )
 
     with overview_tab:
-        st.subheader("Skills you can already leverage")
-        for match in result["matched_skills"]:
-            st.markdown(
-                f"- **{match['label']}** — your rating "
-                f"{match['current']:g}/5; prototype target "
-                f"{match['target']}/5"
+        st.subheader("The simple explanation")
+        st.write(guidance["fit"])
+        st.info(
+            "Why the app showed this job: your strongest demonstrated skills overlap "
+            "with important activities in this job family. This is a direction to "
+            "investigate—not proof that you already meet an employer's requirements."
+        )
+
+        st.subheader("How your existing skills connect to the work")
+        if result["matched_skills"]:
+            for match in result["matched_skills"]:
+                st.markdown(f"#### {match['label']}")
+                st.caption(
+                    f"Your rating: {match['current']:g}/5 · teaching target used "
+                    f"for this job family: {match['target']}/5"
+                )
+                st.markdown(f"**Why it matters:** {match['why']}")
+                st.markdown(f"**Example at work:** {match['example']}")
+        else:
+            st.write(
+                "The app found a partial overall pattern, but none of your rated "
+                "skills overlaps strongly with this role's four priority skills. "
+                "Treat this option cautiously and validate it with a practitioner."
             )
-        st.subheader("Experience-level interpretation")
+
+        st.subheader("What people in this job commonly do")
+        st.markdown(
+            "\n".join(f"- {task}" for task in guidance["typical_work"])
+        )
+
+        with st.expander("Sources for this job-fit explanation"):
+            source_links(guidance["role_sources"])
+            st.caption(
+                "O*NET describes U.S. occupational tasks. It is used here as a "
+                "task reference, not as a Philippine licensing rule, a live vacancy, "
+                "or one employer's job description."
+            )
+
+        st.subheader("What your experience level may mean")
         st.write(result["experience_guidance"])
+
         st.subheader("Where this job family is applied")
         st.markdown(
             "\n".join(
@@ -576,12 +609,34 @@ def render_recommendation(result: dict, rank: int) -> None:
         )
 
     with ai_tab:
-        st.subheader("Why this work remains relevant as AI spreads")
-        st.write(result["future_demand"]["insight"])
-        st.subheader("How AI can augment the role")
+        st.subheader("The short answer")
+        st.write(guidance["ai_explanation"])
+        st.info(
+            "The AI-era relevance score is a comparison tool inside this app. It is "
+            "not the percentage chance that this job will survive, grow, or be hired."
+        )
+
+        st.subheader("What AI may help with")
         st.write(result["ai_opportunity"])
-        st.subheader("Human accountability that remains important")
+
+        st.subheader("What still needs human judgment")
         st.write(result["human_edge"])
+
+        st.subheader("How to remain competitive")
+        st.markdown(
+            "\n".join(f"- {action}" for action in guidance["ai_actions"])
+        )
+
+        st.subheader("What the research says about the direction of change")
+        st.write(result["future_demand"]["insight"])
+        with st.expander("Sources for this AI-era explanation"):
+            source_links(guidance["ai_sources"])
+            st.caption(
+                "Role-specific AI examples are practical inferences from the cited "
+                "occupational tasks and WEF/ILO research on skill change and human–AI "
+                "augmentation. They are not guarantees about a particular employer."
+            )
+
         st.subheader("A practical proof to build")
         st.info(result["first_proof"])
         st.caption(
@@ -590,23 +645,35 @@ def render_recommendation(result: dict, rank: int) -> None:
         )
 
     with skills_tab:
-        st.subheader("Highest-priority gaps")
+        st.subheader("Skills that would strengthen this match")
+        st.write(
+            "These are role-relevant skills where your self-rating is below the "
+            "teaching target used by the synthetic model. The explanation below shows "
+            "why each skill is used in the work—not only the score difference."
+        )
         if result["skill_gaps"]:
-            for gap in result["skill_gaps"]:
-                st.markdown(
-                    f"- **{gap['label']}** — your rating "
-                    f"{gap['current']:g}/5; synthetic job-family target "
-                    f"{gap['target']}/5"
+            for gap_number, gap in enumerate(result["skill_gaps"], start=1):
+                st.markdown(f"### {gap_number}. {gap['label']}")
+                st.caption(
+                    f"Your rating: {gap['current']:g}/5 · teaching target used "
+                    f"for this job family: {gap['target']}/5"
                 )
+                st.markdown(f"**Why this skill is needed:** {gap['why']}")
+                st.markdown(f"**What it can look like at work:** {gap['example']}")
+                with st.expander(f"Sources for {gap['label']}"):
+                    source_links(gap["sources"])
+                st.divider()
         else:
             st.success(
-                "Your self-ratings meet this synthetic prototype's target levels. "
-                "Validate them next with a work sample and practitioner feedback."
+                "Your self-ratings meet the teaching targets for this role's priority "
+                "skills. The next step is to prove those ratings with a work sample "
+                "and obtain feedback from a practitioner."
             )
         st.caption(
-            "Targets come from documented synthetic role prototypes. They are not "
-            "employer requirements or occupational standards. Validate gaps against "
-            "several current job descriptions before paying for training."
+            "The reasons are tied to the cited occupational tasks. The 1–5 targets "
+            "remain synthetic design assumptions—not employer requirements, Philippine "
+            "occupational standards, or proof that a course is necessary. Compare the "
+            "guidance with several current job descriptions before paying for training."
         )
 
     with learning_tab:

@@ -415,6 +415,72 @@ SOURCES = {
         "url": "https://www.iso.org/standard/66912.html",
         "published": "Confirmed current in 2023; checked 28 July 2026",
     },
+    "onet_bi": {
+        "name": "Business Intelligence Analysts — occupation profile",
+        "owner": "O*NET OnLine, U.S. Department of Labor",
+        "url": "https://www.onetonline.org/link/summary/15-2051.01",
+        "published": "Updated 2026; checked 28 July 2026",
+    },
+    "onet_cyber": {
+        "name": "Information Security Analysts — occupation profile",
+        "owner": "O*NET OnLine, U.S. Department of Labor",
+        "url": "https://www.onetonline.org/link/summary/15-1212.00",
+        "published": "Updated 2026; checked 28 July 2026",
+    },
+    "onet_systems": {
+        "name": "Computer Systems Engineers/Architects — occupation profile",
+        "owner": "O*NET OnLine, U.S. Department of Labor",
+        "url": "https://www.onetonline.org/link/summary/15-1299.08",
+        "published": "Updated 2026; checked 28 July 2026",
+    },
+    "onet_project": {
+        "name": "Project Management Specialists — occupation profile",
+        "owner": "O*NET OnLine, U.S. Department of Labor",
+        "url": "https://www.onetonline.org/link/summary/13-1082.00",
+        "published": "Updated 2026; checked 28 July 2026",
+    },
+    "onet_market": {
+        "name": "Market Research Analysts and Marketing Specialists — occupation profile",
+        "owner": "O*NET OnLine, U.S. Department of Labor",
+        "url": "https://www.onetonline.org/link/summary/13-1161.00",
+        "published": "Updated 2026; checked 28 July 2026",
+    },
+    "onet_hr": {
+        "name": "Human Resources Specialists — occupation profile",
+        "owner": "O*NET OnLine, U.S. Department of Labor",
+        "url": "https://www.onetonline.org/link/summary/13-1071.00",
+        "published": "Updated 2026; checked 28 July 2026",
+    },
+    "onet_logistics": {
+        "name": "Logisticians — occupation profile",
+        "owner": "O*NET OnLine, U.S. Department of Labor",
+        "url": "https://www.onetonline.org/link/summary/13-1081.00",
+        "published": "Updated 2026; checked 28 July 2026",
+    },
+    "onet_finance": {
+        "name": "Financial and Investment Analysts — occupation profile",
+        "owner": "O*NET OnLine, U.S. Department of Labor",
+        "url": "https://www.onetonline.org/link/summary/13-2051.00",
+        "published": "Updated 2026; checked 28 July 2026",
+    },
+    "onet_quality": {
+        "name": "Quality Control Analysts — occupation profile",
+        "owner": "O*NET OnLine, U.S. Department of Labor",
+        "url": "https://www.onetonline.org/link/summary/19-4099.01",
+        "published": "Updated 2026; checked 28 July 2026",
+    },
+    "onet_operations": {
+        "name": "General and Operations Managers — occupation profile",
+        "owner": "O*NET OnLine, U.S. Department of Labor",
+        "url": "https://www.onetonline.org/link/summary/11-1021.00",
+        "published": "Updated 2026; checked 28 July 2026",
+    },
+    "onet_digital_design": {
+        "name": "Web and Digital Interface Designers — occupation profile",
+        "owner": "O*NET OnLine, U.S. Department of Labor",
+        "url": "https://www.onetonline.org/link/summary/15-1255.00",
+        "published": "Updated 2026; checked 28 July 2026",
+    },
 }
 
 
@@ -1567,6 +1633,660 @@ JOB_PROTOTYPES: dict[str, dict[str, Any]] = {
 }
 
 
+def skill_reason(
+    why: str,
+    example: str,
+    sources: list[str],
+) -> dict[str, Any]:
+    """Create a fixed, source-linked explanation for one role skill."""
+    return {
+        "why": why,
+        "example": example,
+        "sources": sources,
+    }
+
+
+# Plain-language guidance is deliberately fixed rather than model-generated.
+# O*NET is used as an occupational task reference, not as a Philippine licensing
+# standard or a claim about one employer's vacancy requirements.
+ROLE_GUIDANCE: dict[str, dict[str, Any]] = {
+    "data_bi_analyst": {
+        "fit": (
+            "This job is a close match when you can work with data and explain what "
+            "the numbers mean. The job is not only about making charts. It involves "
+            "checking the data, finding useful patterns, and turning those patterns "
+            "into information that managers or teams can use."
+        ),
+        "typical_work": [
+            "Build and maintain reports, dashboards, or other decision tools.",
+            "Check whether data is complete, consistent, and suitable for the question.",
+            "Explain trends and recommend a practical action to a non-technical audience.",
+        ],
+        "skill_reasons": {
+            "data_analytics": skill_reason(
+                "BI analysts query data, prepare reports, and identify patterns or trends. "
+                "Without this skill, it is difficult to tell whether a result is real, "
+                "relevant, or caused by poor-quality data.",
+                "Clean a sales or operations dataset, calculate useful measures, and build "
+                "a dashboard that answers a specific business question.",
+                ["onet_bi"],
+            ),
+            "communication": skill_reason(
+                "The analysis only creates value when other people understand it. O*NET "
+                "lists interpreting information for others and reporting to managers as "
+                "part of BI work.",
+                "Explain one important trend in plain language, state what is uncertain, "
+                "and recommend the next decision or investigation.",
+                ["onet_bi"],
+            ),
+            "software_cloud": skill_reason(
+                "BI work uses databases, spreadsheets, reporting platforms, and dashboard "
+                "tools. Technical confidence is needed to retrieve data and maintain the "
+                "tools that other people rely on.",
+                "Use SQL or a reporting tool to connect a data source, document the logic, "
+                "and make the report repeatable.",
+                ["onet_bi"],
+            ),
+            "ai_automation": skill_reason(
+                "AI and automation can speed up repetitive analysis, drafting, and data "
+                "preparation. The analyst still needs enough knowledge to check the output "
+                "and stop errors from reaching a decision-maker.",
+                "Automate one repeatable reporting step, then add checks for missing data, "
+                "unexpected values, and incorrect calculations.",
+                ["wef_skills", "ilo_genai", "onet_bi"],
+            ),
+        },
+        "ai_explanation": (
+            "AI can help write a first query, summarize a table, or draft a chart "
+            "description. It does not know whether the source data is trustworthy or "
+            "whether a pattern makes sense for the organization. A competitive analyst "
+            "uses AI for speed but keeps responsibility for the question, the checks, "
+            "and the recommendation."
+        ),
+        "ai_actions": [
+            "Learn to use an AI assistant without uploading confidential business data.",
+            "Check AI-produced calculations, code, labels, and conclusions against the source.",
+            "Build judgment by explaining why a measure is useful and what it cannot prove.",
+        ],
+        "role_sources": ["onet_bi"],
+        "ai_sources": ["wef_skills", "ilo_genai", "onet_bi"],
+    },
+    "cybersecurity_analyst": {
+        "fit": (
+            "This job is a close match when you can understand digital systems, notice "
+            "risk, and follow evidence carefully. Security analysts protect information "
+            "and systems by monitoring activity, finding weaknesses, documenting what "
+            "happened, and helping people reduce the chance of another incident."
+        ),
+        "typical_work": [
+            "Monitor systems or alerts and investigate unusual activity.",
+            "Assess vulnerabilities and recommend controls that reduce risk.",
+            "Document incidents, procedures, tests, and lessons for technical and business teams.",
+        ],
+        "skill_reasons": {
+            "cybersecurity_risk": skill_reason(
+                "The central responsibility is to identify vulnerabilities, assess risk, "
+                "apply controls, and respond to security problems.",
+                "Review a simple system, identify its most important risks, and propose "
+                "controls with a clear reason for each one.",
+                ["onet_cyber"],
+            ),
+            "software_cloud": skill_reason(
+                "Security controls protect real networks, applications, accounts, and "
+                "cloud services. Analysts need to understand how those systems normally "
+                "work before they can recognize unsafe behavior.",
+                "Create a small practice environment and document normal access, logging, "
+                "patching, and account-permission settings.",
+                ["onet_cyber"],
+            ),
+            "data_analytics": skill_reason(
+                "Security investigations involve logs, alerts, access records, and other "
+                "evidence. Analytical skill helps separate a real warning from normal noise.",
+                "Analyze a synthetic event log, group related events, and write an "
+                "evidence-based incident timeline.",
+                ["onet_cyber"],
+            ),
+            "communication": skill_reason(
+                "O*NET includes documenting security measures, discussing violations, "
+                "training users, and promoting security awareness. Controls fail when "
+                "people do not understand what they must do.",
+                "Write a short incident summary for a manager and a separate set of clear "
+                "actions for affected users.",
+                ["onet_cyber"],
+            ),
+        },
+        "ai_explanation": (
+            "AI can help summarize alerts, group similar events, or draft a first incident "
+            "note. Attackers can also use AI, and AI-generated security advice can be "
+            "wrong. A competitive security analyst understands the system, verifies the "
+            "evidence, protects sensitive data, and remains accountable for the response."
+        ),
+        "ai_actions": [
+            "Practice checking AI suggestions against logs, approved procedures, and trusted guidance.",
+            "Learn how privacy and security rules affect the data that may be sent to an AI tool.",
+            "Strengthen incident communication so technical findings lead to timely action.",
+        ],
+        "role_sources": ["onet_cyber"],
+        "ai_sources": ["wef_skills", "ilo_genai", "onet_cyber"],
+    },
+    "cloud_solutions_engineer": {
+        "fit": (
+            "This job is a close match when you can understand how applications, networks, "
+            "data, and cloud services work together. The work is to design a dependable "
+            "technical solution, test it, document it, and help other people use or "
+            "maintain it."
+        ),
+        "typical_work": [
+            "Translate user or business needs into a technical system design.",
+            "Test system stability, security, compatibility, and scalability.",
+            "Document the design and guide implementation or troubleshooting.",
+        ],
+        "skill_reasons": {
+            "software_cloud": skill_reason(
+                "Systems engineers design, integrate, configure, test, and troubleshoot "
+                "computer systems. This is the technical foundation of the role.",
+                "Design a small cloud solution, show how its components connect, and "
+                "document how it is deployed and monitored.",
+                ["onet_systems"],
+            ),
+            "cybersecurity_risk": skill_reason(
+                "O*NET includes secure-system guidance, security analysis, and checking "
+                "architecture for security. A working solution is not acceptable if it "
+                "exposes data or access.",
+                "Add identity, permissions, encryption, logging, and recovery controls to "
+                "a sample cloud design.",
+                ["onet_systems"],
+            ),
+            "project_change": skill_reason(
+                "Solutions are implemented through coordinated changes, tests, schedules, "
+                "and handoffs. Planning reduces outages and unclear ownership.",
+                "Create a short migration plan with steps, risks, owners, tests, and a "
+                "rollback procedure.",
+                ["onet_systems"],
+            ),
+            "communication": skill_reason(
+                "Systems engineers gather requirements, give technical guidance, and "
+                "communicate designs through reports and presentations.",
+                "Explain the same architecture twice: once for engineers and once for a "
+                "non-technical decision-maker.",
+                ["onet_systems"],
+            ),
+        },
+        "ai_explanation": (
+            "AI can draft configuration examples, documentation, or troubleshooting ideas. "
+            "It cannot see every dependency, policy, cost, or failure mode in a real "
+            "environment. A competitive engineer uses AI as a helper, then tests the "
+            "solution and accepts responsibility for security and reliability."
+        ),
+        "ai_actions": [
+            "Use AI-generated code only in a test environment before considering production use.",
+            "Build stronger skills in architecture trade-offs, security, testing, and recovery.",
+            "Document what was verified, what remains uncertain, and who approves the change.",
+        ],
+        "role_sources": ["onet_systems"],
+        "ai_sources": ["wef_skills", "ilo_genai", "onet_systems"],
+    },
+    "project_manager": {
+        "fit": (
+            "This job is a close match when you can organize work, keep people aligned, "
+            "and move a goal from idea to completion. Project managers do not have to be "
+            "the deepest technical expert. They make the plan visible, manage risks and "
+            "resources, and help the team make timely decisions."
+        ),
+        "typical_work": [
+            "Build and update plans covering scope, schedule, people, costs, and deliverables.",
+            "Coordinate stakeholders, resolve problems, and communicate progress.",
+            "Track risks, quality, budget, and whether promised outcomes were delivered.",
+        ],
+        "skill_reasons": {
+            "project_change": skill_reason(
+                "O*NET describes planning schedules, staffing, procurement, budgets, "
+                "milestones, and deliverables as central project-management work.",
+                "Build a project plan with clear outcomes, owners, milestones, risks, and "
+                "a method for controlling changes.",
+                ["onet_project"],
+            ),
+            "communication": skill_reason(
+                "Project managers gather requirements, facilitate meetings, negotiate "
+                "resources, report status, and explain problems to different stakeholders.",
+                "Prepare a one-page status update that clearly states progress, risks, "
+                "decisions needed, and next actions.",
+                ["onet_project"],
+            ),
+            "people_coaching": skill_reason(
+                "The role assigns responsibilities, guides team members, gives feedback, "
+                "and brings different people together to complete shared work.",
+                "Run a short team review that identifies a blocker without blaming people "
+                "and agrees on an owner and due date.",
+                ["onet_project"],
+            ),
+            "finance_commercial": skill_reason(
+                "Project managers monitor costs, prepare budget estimates, and make "
+                "trade-offs when time, money, and resources are limited.",
+                "Create a simple project budget and explain how one delay or scope change "
+                "would affect cost and delivery.",
+                ["onet_project"],
+            ),
+        },
+        "ai_explanation": (
+            "AI can draft minutes, summarize updates, or produce a first schedule. It "
+            "cannot secure genuine agreement, understand every stakeholder concern, or "
+            "take responsibility for a difficult trade-off. A competitive project manager "
+            "uses AI to reduce administration and spends more time on judgment, alignment, "
+            "risk, and delivery."
+        ),
+        "ai_actions": [
+            "Automate low-risk administration while checking names, dates, owners, and decisions.",
+            "Strengthen facilitation, negotiation, risk thinking, and change leadership.",
+            "Keep a human-approved record of decisions rather than treating AI text as authority.",
+        ],
+        "role_sources": ["onet_project", "pmi_talent"],
+        "ai_sources": ["wef_skills", "ilo_genai", "onet_project"],
+    },
+    "digital_marketing_strategist": {
+        "fit": (
+            "This job is a close match when you can understand an audience, create a clear "
+            "message, and measure whether a campaign worked. Strong digital marketing "
+            "combines customer research, creative communication, and evidence from data."
+        ),
+        "typical_work": [
+            "Research customer needs, competitors, channels, and market conditions.",
+            "Plan and produce campaign messages or digital experiences for a target audience.",
+            "Measure results and adjust the campaign using evidence rather than opinion alone.",
+        ],
+        "skill_reasons": {
+            "customer_research": skill_reason(
+                "O*NET lists collecting information about customer needs, preferences, "
+                "buying habits, and opinions as core marketing research work.",
+                "Interview or survey a small target group and turn the findings into clear "
+                "audience needs and campaign assumptions.",
+                ["onet_market"],
+            ),
+            "communication": skill_reason(
+                "Marketing specialists translate research into reports, proposals, and "
+                "messages that influence a target audience and guide managers.",
+                "Write one campaign message for a defined audience and explain the evidence "
+                "behind the wording and channel choice.",
+                ["onet_market"],
+            ),
+            "creative_design": skill_reason(
+                "Campaigns need ideas and content that make the message easy to notice and "
+                "understand. O*NET includes thinking creatively and knowledge of media and "
+                "communication methods.",
+                "Create a small campaign concept with a message, visual direction, channel, "
+                "and reason each element suits the audience.",
+                ["onet_market"],
+            ),
+            "data_analytics": skill_reason(
+                "O*NET includes analyzing customer data, web metrics, trends, and campaign "
+                "effectiveness. Measurement is needed to learn what actually worked.",
+                "Define a campaign goal and dashboard, then compare results with a baseline "
+                "instead of reporting clicks without context.",
+                ["onet_market"],
+            ),
+        },
+        "ai_explanation": (
+            "AI can produce many draft messages and images quickly. It does not automatically "
+            "know which claim is accurate, respectful, distinctive, or useful to a specific "
+            "customer. A competitive marketer uses AI for options and speed, then applies "
+            "customer evidence, brand judgment, legal checks, and performance measurement."
+        ),
+        "ai_actions": [
+            "Use customer research to guide prompts and reject generic AI output.",
+            "Check generated claims, sources, permissions, bias, and brand consistency.",
+            "Run controlled tests and use results—not volume of generated content—to judge value.",
+        ],
+        "role_sources": ["onet_market"],
+        "ai_sources": ["wef_skills", "ilo_genai", "onet_market"],
+    },
+    "people_analytics_specialist": {
+        "fit": (
+            "This job is a close match when you can work responsibly with workforce data "
+            "and explain what it may mean for employees and managers. The role connects "
+            "people knowledge with analysis; it should support better questions and fairer "
+            "decisions, not reduce a person to a score."
+        ),
+        "typical_work": [
+            "Prepare and analyze workforce measures such as hiring, retention, or development.",
+            "Explain findings and limitations to HR leaders and managers.",
+            "Protect employee information and check whether measures could create unfair conclusions.",
+        ],
+        "skill_reasons": {
+            "data_analytics": skill_reason(
+                "O*NET includes analyzing employment-related data and preparing reports. "
+                "Analytical skill is needed to calculate measures correctly and avoid "
+                "confusing correlation with cause.",
+                "Build a workforce dashboard with documented definitions, missing-data "
+                "checks, and a plain-language note about what cannot be concluded.",
+                ["onet_hr", "shrm_people"],
+            ),
+            "people_coaching": skill_reason(
+                "Workforce numbers only make sense with knowledge of hiring, performance, "
+                "development, employee relations, and how policies affect people.",
+                "Turn one workforce finding into a manager conversation and a supportive "
+                "action rather than an automatic judgment about an employee.",
+                ["onet_hr", "shrm_people"],
+            ),
+            "communication": skill_reason(
+                "HR specialists explain policies, advise managers, provide training, and "
+                "report employment information. Sensitive findings must be communicated "
+                "clearly and carefully.",
+                "Present a finding with its definition, evidence, uncertainty, possible "
+                "human impact, and a responsible next step.",
+                ["onet_hr"],
+            ),
+            "cybersecurity_risk": skill_reason(
+                "People analytics uses sensitive employment information. Privacy, access "
+                "control, appropriate use, and careful sharing are necessary to reduce harm.",
+                "Design a simple data-access plan showing who may see individual records, "
+                "who receives only grouped results, and when data should be deleted.",
+                ["onet_hr", "ilo_genai"],
+            ),
+        },
+        "ai_explanation": (
+            "AI can help summarize survey comments or draft an analysis. It can also repeat "
+            "bias, expose sensitive data, or create confident but unfair interpretations. "
+            "A competitive people analyst combines data skill with privacy, fairness, "
+            "workforce knowledge, and human review before any action affects employees."
+        ),
+        "ai_actions": [
+            "Use anonymized or synthetic practice data and follow approved privacy controls.",
+            "Test whether results differ unfairly across groups and investigate the cause.",
+            "Keep consequential employee decisions with accountable humans and documented evidence.",
+        ],
+        "role_sources": ["onet_hr", "shrm_people"],
+        "ai_sources": ["wef_skills", "ilo_genai", "onet_hr"],
+    },
+    "supply_chain_analyst": {
+        "fit": (
+            "This job is a close match when you can follow how materials or products move, "
+            "measure what is going wrong, and improve the process. Supply-chain analysis "
+            "connects data with practical operations such as inventory, purchasing, "
+            "transport, delivery, and supplier performance."
+        ),
+        "typical_work": [
+            "Track inventory, delivery, cost, capacity, and supplier performance.",
+            "Find delays, shortages, waste, or process risks and investigate their causes.",
+            "Recommend and coordinate an operational improvement with affected teams.",
+        ],
+        "skill_reasons": {
+            "operations_quality": skill_reason(
+                "O*NET describes coordinating the product life cycle, reviewing logistics "
+                "performance, allocating materials, and improving the movement of goods.",
+                "Map a simple order-to-delivery process, identify one failure point, and "
+                "propose a measurable control or improvement.",
+                ["onet_logistics"],
+            ),
+            "data_analytics": skill_reason(
+                "Logistics work includes compiling and analyzing technical and performance "
+                "data. Analysts need evidence to separate a recurring problem from a one-time event.",
+                "Analyze synthetic inventory or delivery data and show the main cause of "
+                "late or incomplete orders.",
+                ["onet_logistics"],
+            ),
+            "project_change": skill_reason(
+                "Supply-chain improvements cross departments and suppliers. O*NET includes "
+                "plans, schedules, responsibility matrices, and coordination activities.",
+                "Create a small improvement plan with owners, milestones, risks, and a "
+                "before-and-after measure.",
+                ["onet_logistics"],
+            ),
+            "communication": skill_reason(
+                "Logisticians explain solutions to customers and management and coordinate "
+                "with other departments, suppliers, and service providers.",
+                "Explain a shortage or delay using evidence, business impact, available "
+                "choices, and the decision needed.",
+                ["onet_logistics"],
+            ),
+        },
+        "ai_explanation": (
+            "AI can help forecast demand, classify issues, or compare scenarios. A forecast "
+            "can still fail when data is poor or when a supplier, weather event, policy, or "
+            "local constraint changes. A competitive analyst checks assumptions, understands "
+            "the real process, and prepares people to act when the model is wrong."
+        ),
+        "ai_actions": [
+            "Learn to compare an AI or statistical forecast with a simple baseline.",
+            "Document assumptions and create an exception plan for shortages or disruptions.",
+            "Keep supplier, cost, customer, and operational data within approved systems.",
+        ],
+        "role_sources": ["onet_logistics", "ascm_cpim"],
+        "ai_sources": ["wef_skills", "ilo_genai", "onet_logistics"],
+    },
+    "fpa_analyst": {
+        "fit": (
+            "This job is a close match when you understand money, can analyze business "
+            "performance, and can explain the financial effect of a decision. FP&A work "
+            "connects budgets and forecasts with the operational story behind the numbers."
+        ),
+        "typical_work": [
+            "Prepare budgets, forecasts, scenarios, and performance comparisons.",
+            "Investigate why actual results differ from the plan.",
+            "Explain financial risks, trade-offs, and choices to managers.",
+        ],
+        "skill_reasons": {
+            "finance_commercial": skill_reason(
+                "Financial analysts use financial models, assess performance and risk, and "
+                "prepare plans. Finance knowledge is needed to use the right definitions "
+                "and understand the business effect of a number.",
+                "Build a simple forecast with revenue, cost, cash, and clearly stated assumptions.",
+                ["onet_finance"],
+            ),
+            "data_analytics": skill_reason(
+                "The work requires quantitative analysis of financial and operational data, "
+                "including trends, comparisons, and model-based scenarios.",
+                "Compare actual results with budget, identify the largest variance, and "
+                "trace it to an operational driver.",
+                ["onet_finance"],
+            ),
+            "communication": skill_reason(
+                "O*NET includes client presentations and oral or written reports. Leaders "
+                "need the meaning and decision, not only a spreadsheet.",
+                "Present a forecast in plain language: what changed, why it matters, what is "
+                "uncertain, and what decision is requested.",
+                ["onet_finance"],
+            ),
+            "ai_automation": skill_reason(
+                "AI and automation can speed up repetitive reporting and scenario drafts, "
+                "but financial outputs can cause harm if assumptions or calculations are wrong.",
+                "Automate one repeatable report and add reconciliation, reasonableness, and "
+                "approval checks before it is used.",
+                ["wef_skills", "ilo_genai", "onet_finance"],
+            ),
+        },
+        "ai_explanation": (
+            "AI can draft commentary, formulas, or scenarios. It cannot approve an assumption, "
+            "own a budget, or understand every business constraint. A competitive FP&A "
+            "professional uses AI to reduce repetitive work, then checks the numbers and "
+            "focuses on business judgment, scenarios, and clear advice."
+        ),
+        "ai_actions": [
+            "Reconcile AI-assisted work to approved source data and financial definitions.",
+            "Make every important assumption visible and test more than one scenario.",
+            "Keep financial and commercial information inside approved tools and review paths.",
+        ],
+        "role_sources": ["onet_finance"],
+        "ai_sources": ["wef_skills", "ilo_genai", "onet_finance"],
+    },
+    "laboratory_quality_specialist": {
+        "fit": (
+            "This job is a close match when you can perform scientific work carefully and "
+            "follow quality procedures. The role connects hands-on testing with accurate "
+            "records, equipment control, investigation of unusual results, and evidence "
+            "that a laboratory process is dependable."
+        ),
+        "typical_work": [
+            "Test samples using approved methods and compare results with specifications.",
+            "Maintain equipment, records, safety, cleanliness, and controlled procedures.",
+            "Investigate unusual results and recommend corrective or preventive action.",
+        ],
+        "skill_reasons": {
+            "scientific_laboratory": skill_reason(
+                "Quality-control analysts conduct laboratory tests, interpret results, "
+                "maintain equipment, and validate methods. Scientific knowledge is needed "
+                "to perform the method and recognize when a result is not credible.",
+                "Run a documented test on a safe practice sample, record observations, and "
+                "explain the scientific basis of the method.",
+                ["onet_quality", "prc_chem_lab"],
+            ),
+            "operations_quality": skill_reason(
+                "The job compares results with specifications, monitors procedures, writes "
+                "standard procedures, supports audits, and investigates failures. ISO/IEC "
+                "17025 also focuses on competent and consistent laboratory operation.",
+                "Create a simple deviation investigation showing the problem, evidence, "
+                "likely cause, corrective action, and effectiveness check.",
+                ["onet_quality", "iso_17025"],
+            ),
+            "data_analytics": skill_reason(
+                "Laboratory quality work compiles test data, analyzes trends, checks control "
+                "limits, and investigates out-of-specification or questionable results.",
+                "Plot a synthetic set of quality-control results and explain whether a "
+                "change appears meaningful and what should be checked next.",
+                ["onet_quality"],
+            ),
+            "communication": skill_reason(
+                "O*NET lists technical reports, deviation reports, protocols, procedures, "
+                "training, and liaison work. Clear records allow another qualified person "
+                "to understand what happened and repeat or review the work.",
+                "Write a short laboratory report with method, result, limitation, deviation, "
+                "and next action in clear language.",
+                ["onet_quality", "iso_17025"],
+            ),
+        },
+        "ai_explanation": (
+            "AI can help organize literature, draft a procedure outline, or look for patterns "
+            "in non-sensitive data. It cannot physically handle the sample, observe the "
+            "instrument, guarantee traceability, or sign professional and regulatory "
+            "responsibility. A competitive laboratory professional combines digital tools "
+            "with hands-on competence, quality judgment, safety, and complete records."
+        ),
+        "ai_actions": [
+            "Use AI only with approved, non-sensitive data and verify every technical statement.",
+            "Strengthen method validation, data integrity, investigations, and equipment knowledge.",
+            "Keep final scientific conclusions and regulated approvals with qualified humans.",
+        ],
+        "role_sources": ["onet_quality", "iso_17025", "prc_chem_lab"],
+        "ai_sources": ["wef_skills", "ilo_genai", "onet_quality", "iso_17025"],
+    },
+    "customer_experience_manager": {
+        "fit": (
+            "This job is a close match when you can listen to customers, explain problems "
+            "clearly, and improve the service that teams deliver. Customer-experience work "
+            "looks across the whole journey, not only one complaint, and turns repeated "
+            "customer evidence into operational change."
+        ),
+        "typical_work": [
+            "Collect and interpret customer feedback, behavior, and service measures.",
+            "Find recurring problems across channels or stages of the customer journey.",
+            "Coordinate teams to improve the service and measure whether the change helped.",
+        ],
+        "skill_reasons": {
+            "customer_research": skill_reason(
+                "Market-research work includes collecting customer needs, opinions, "
+                "preferences, and satisfaction data. CX decisions need evidence from the "
+                "people who actually use the service.",
+                "Combine a small set of interviews, complaints, and service measures into "
+                "a journey map with evidence for each pain point.",
+                ["onet_market"],
+            ),
+            "communication": skill_reason(
+                "CX managers must listen carefully, explain customer impact, and make a "
+                "clear case for action across teams with different priorities.",
+                "Present one customer problem using a real example, supporting data, business "
+                "impact, and a specific decision request.",
+                ["onet_market", "onet_operations"],
+            ),
+            "people_coaching": skill_reason(
+                "Service improvement depends on frontline and support teams changing how "
+                "work is done. Operations management includes guiding, developing, and "
+                "coordinating people.",
+                "Coach a team through one service breakdown, focusing on the process and "
+                "the next behavior rather than blame.",
+                ["onet_operations"],
+            ),
+            "operations_quality": skill_reason(
+                "A customer problem often comes from a process, handoff, control, or capacity "
+                "issue. Operational skill is needed to make an improvement reliable, not temporary.",
+                "Map the service process, identify the failure point, change one control, "
+                "and track a customer and an operational measure.",
+                ["onet_operations", "onet_market"],
+            ),
+        },
+        "ai_explanation": (
+            "AI can summarize feedback, suggest reply drafts, or identify repeated themes. "
+            "It may miss context, emotion, accessibility needs, or the seriousness of an "
+            "individual case. A competitive CX professional uses AI for scale while keeping "
+            "human listening, fair judgment, escalation, and service accountability."
+        ),
+        "ai_actions": [
+            "Check AI-generated themes against original feedback and multiple customer groups.",
+            "Protect customer information and avoid placing private conversations in unapproved tools.",
+            "Measure whether an AI-enabled service change improves outcomes without excluding people.",
+        ],
+        "role_sources": ["onet_market", "onet_operations"],
+        "ai_sources": ["wef_skills", "ilo_genai", "onet_market", "onet_operations"],
+    },
+    "ux_researcher": {
+        "fit": (
+            "This job is a close match when you are curious about how people use a product "
+            "and can turn observation into design guidance. UX researchers plan studies, "
+            "listen without leading the participant, analyze evidence, and explain what the "
+            "product team should learn or test next."
+        ),
+        "typical_work": [
+            "Choose a suitable research method and recruit relevant participants.",
+            "Conduct interviews or usability studies and analyze recurring evidence.",
+            "Explain user needs, uncertainty, and design implications to a product team.",
+        ],
+        "skill_reasons": {
+            "customer_research": skill_reason(
+                "Market-research tasks include collecting needs and opinions and designing "
+                "surveys or other data-collection methods. UX research applies those skills "
+                "to product and service use.",
+                "Plan and conduct five usability sessions on a safe prototype, then separate "
+                "observed behavior from your interpretation.",
+                ["onet_market", "onet_digital_design"],
+            ),
+            "communication": skill_reason(
+                "Researchers interview participants and translate complex findings into "
+                "clear written or visual guidance for designers and decision-makers.",
+                "Write a research readout with the question, method, evidence, limitation, "
+                "and two prioritized recommendations.",
+                ["onet_market", "onet_digital_design"],
+            ),
+            "creative_design": skill_reason(
+                "Researchers work with prototypes, user flows, interfaces, and design "
+                "choices. Design literacy helps them frame realistic tasks and make findings actionable.",
+                "Create or use a simple prototype and explain how each research finding "
+                "could affect the design without pretending the finding is a final answer.",
+                ["onet_digital_design"],
+            ),
+            "data_analytics": skill_reason(
+                "Research requires organizing observations and, when appropriate, survey "
+                "or product data. Analytical skill helps identify patterns without "
+                "overstating what a small study proves.",
+                "Code interview notes or usability problems, count recurring patterns, and "
+                "state the sample and limitations beside the result.",
+                ["onet_market"],
+            ),
+        },
+        "ai_explanation": (
+            "AI can transcribe, organize notes, or suggest possible themes. It may erase "
+            "nuance, invent a pattern, or reproduce bias. A competitive UX researcher uses "
+            "AI to reduce administration while preserving participant context, consent, "
+            "privacy, careful interpretation, and direct observation."
+        ),
+        "ai_actions": [
+            "Check every AI-generated theme against the original research evidence.",
+            "Remove or protect participant identifiers before using approved analysis tools.",
+            "Strengthen interviewing, study design, accessibility, and research ethics.",
+        ],
+        "role_sources": ["onet_market", "onet_digital_design"],
+        "ai_sources": ["wef_skills", "ilo_genai", "onet_market", "onet_digital_design"],
+    },
+}
+
+
 LEARNING_OPTIONS: dict[str, list[dict[str, str]]] = {
     "data_bi_analyst": [
         {
@@ -2126,6 +2846,7 @@ class CareerEngine:
             career_id = str(career_id)
             career = CAREERS[career_id]
             prototype = JOB_PROTOTYPES[career_id]
+            role_guidance = ROLE_GUIDANCE[career_id]
             current = career["current_demand"]
             future = career["future_demand"]
             skill_alignment = skill_alignment_for(profile, career_id)
@@ -2199,6 +2920,7 @@ class CareerEngine:
                     "matched_skills": matched_skills_for(profile, career_id),
                     "skill_gaps": skill_gaps_for(profile, career_id, limit=4),
                     "application_contexts": prototype["application_contexts"],
+                    "role_guidance": role_guidance,
                     "learning_options": learning_options,
                     **career,
                 }
@@ -2286,6 +3008,7 @@ def matched_skills_for(
     limit: int = 4,
 ) -> list[dict[str, Any]]:
     targets = target_ratings(career_id)
+    skill_reasons = ROLE_GUIDANCE[career_id]["skill_reasons"]
     matches = [
         {
             "skill": skill,
@@ -2293,8 +3016,10 @@ def matched_skills_for(
             "current": float(profile[skill]),
             "target": target,
             "matched": min(float(profile[skill]), float(target)),
+            **skill_reasons[skill],
         }
-        for skill, target in targets.items()
+        for skill in skill_reasons
+        if (target := targets[skill])
         if float(profile[skill]) > 0
     ]
     return sorted(
@@ -2332,6 +3057,7 @@ def skill_gaps_for(
     limit: int = 4,
 ) -> list[dict[str, Any]]:
     targets = target_ratings(career_id)
+    skill_reasons = ROLE_GUIDANCE[career_id]["skill_reasons"]
     gaps = [
         {
             "skill": skill,
@@ -2339,8 +3065,10 @@ def skill_gaps_for(
             "current": float(profile[skill]),
             "target": target,
             "gap": target - float(profile[skill]),
+            **skill_reasons[skill],
         }
-        for skill, target in targets.items()
+        for skill in skill_reasons
+        if (target := targets[skill])
         if target - float(profile[skill]) > 0
     ]
     return sorted(gaps, key=lambda item: item["gap"], reverse=True)[:limit]
