@@ -365,6 +365,14 @@ st.markdown(
         border-radius: 10px;
         font-weight: 750;
       }
+      .stApp [data-testid="stLinkButton"] a,
+      .stApp [data-testid="stLinkButton"] a *,
+      .stApp .stLinkButton a,
+      .stApp .stLinkButton a * {
+        color: #050914 !important;
+        fill: currentColor !important;
+        opacity: 1 !important;
+      }
       div[role="tablist"] {
         gap: .65rem;
         background: rgba(11,18,32,.72);
