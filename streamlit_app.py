@@ -74,6 +74,13 @@ st.markdown(
       .stApp [data-testid="stNumberInput"] button {
         color: #101827 !important;
       }
+      [role="listbox"],
+      [role="listbox"] [role="option"],
+      [role="listbox"] [role="option"] *,
+      [data-baseweb="popover"] [role="option"],
+      [data-baseweb="popover"] [role="option"] * {
+        color: #101827 !important;
+      }
       .stApp input::placeholder,
       .stApp textarea::placeholder {
         color: #596579 !important;
@@ -424,10 +431,24 @@ st.markdown(
         color: #050914 !important;
         background: #ffffff !important;
       }
+      .stApp [data-testid="stExpander"] details[open] > summary [data-testid="stMarkdownContainer"],
+      .stApp [data-testid="stExpander"] details[open] > summary p,
+      .stApp [data-testid="stExpander"] details[open] > summary span,
+      .stApp [data-testid="stExpander"] details[open] > summary svg {
+        color: #050914 !important;
+        fill: currentColor !important;
+      }
       [data-testid="stExpander"] summary:hover,
       [data-testid="stExpander"] details[open] > summary:hover {
         color: #ffffff !important;
         background: #246bfe !important;
+      }
+      .stApp [data-testid="stExpander"] details[open] > summary:hover [data-testid="stMarkdownContainer"],
+      .stApp [data-testid="stExpander"] details[open] > summary:hover p,
+      .stApp [data-testid="stExpander"] details[open] > summary:hover span,
+      .stApp [data-testid="stExpander"] details[open] > summary:hover svg {
+        color: #ffffff !important;
+        fill: currentColor !important;
       }
       a {color: #77bbff;}
       footer {visibility: hidden;}
