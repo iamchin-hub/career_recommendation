@@ -38,7 +38,7 @@ st.markdown(
         --panel-soft: #182235;
         --line: rgba(151, 172, 214, .22);
         --text: #f7f8fb;
-        --muted: #aab7cc;
+        --muted: #ffffff;
         --blue: #52a8ff;
         --blue-deep: #246bfe;
         --orange: #ff6b2c;
@@ -50,6 +50,34 @@ st.markdown(
           radial-gradient(circle at 10% 40%, rgba(12, 49, 118, .24), transparent 30rem),
           linear-gradient(180deg, #030713 0%, #071022 54%, #050914 100%);
         color: var(--text);
+      }
+      .stApp,
+      .stApp [data-testid="stMarkdownContainer"],
+      .stApp [data-testid="stMarkdownContainer"] p,
+      .stApp [data-testid="stMarkdownContainer"] li,
+      .stApp [data-testid="stCaptionContainer"],
+      .stApp [data-testid="stCaptionContainer"] p,
+      .stApp [data-testid="stWidgetLabel"],
+      .stApp [data-testid="stWidgetLabel"] p,
+      .stApp [data-testid="stMetricLabel"],
+      .stApp [data-testid="stMetricLabel"] p,
+      .stApp [data-testid="stMetricValue"],
+      .stApp [data-testid="stMetricValue"] div,
+      .stApp [data-testid="stSlider"] p,
+      .stApp [data-testid="stSlider"] span {
+        color: #ffffff !important;
+        opacity: 1 !important;
+      }
+      .stApp input,
+      .stApp textarea,
+      .stApp [data-baseweb="select"] *,
+      .stApp [data-testid="stNumberInput"] button {
+        color: #101827 !important;
+      }
+      .stApp input::placeholder,
+      .stApp textarea::placeholder {
+        color: #596579 !important;
+        opacity: 1 !important;
       }
       [data-testid="stHeader"] {background: transparent;}
       [data-testid="stToolbar"] {right: 1rem;}
@@ -313,7 +341,7 @@ st.markdown(
         box-shadow: 0 16px 34px rgba(0,0,0,.2);
       }
       .role-head h3 {margin: .15rem 0 .35rem;}
-      .role-head p {margin: 0; color: var(--muted);}
+      .role-head p {margin: 0; color: #ffffff;}
       div[data-testid="stMetric"] {
         background: rgba(17, 27, 45, .9);
         border: 1px solid var(--line);
@@ -330,16 +358,69 @@ st.markdown(
         border-radius: 10px;
         font-weight: 750;
       }
-      div[data-baseweb="tab-list"] {
+      div[role="tablist"] {
         gap: .3rem;
         background: rgba(11,18,32,.72);
         border: 1px solid var(--line);
         border-radius: 13px;
         padding: .3rem;
       }
-      button[data-baseweb="tab"] {
+      [data-testid="stTab"] {
         border-radius: 9px;
-        color: #c6d3e7;
+        color: #ffffff !important;
+        background-color: transparent !important;
+        transition: background-color .16s ease, color .16s ease;
+      }
+      .stApp [data-testid="stTab"] p,
+      .stApp [data-testid="stTab"] span {
+        color: inherit !important;
+        opacity: 1 !important;
+      }
+      .stApp [data-testid="stTab"][aria-selected="true"] {
+        color: #050914 !important;
+        background-color: #ffffff !important;
+      }
+      .stApp [data-testid="stTab"][aria-selected="true"] p,
+      .stApp [data-testid="stTab"][aria-selected="true"] span {
+        color: #050914 !important;
+      }
+      .stApp [data-testid="stTab"]:hover,
+      .stApp [data-testid="stTab"][aria-selected="true"]:hover {
+        color: #ffffff !important;
+        background-color: #246bfe !important;
+      }
+      .stApp [data-testid="stTab"]:hover p,
+      .stApp [data-testid="stTab"]:hover span,
+      .stApp [data-testid="stTab"][aria-selected="true"]:hover p,
+      .stApp [data-testid="stTab"][aria-selected="true"]:hover span {
+        color: #ffffff !important;
+      }
+      [data-testid="stExpander"] details {
+        overflow: hidden;
+        border: 1px solid var(--line) !important;
+        border-radius: 12px !important;
+        background: rgba(17, 27, 45, .92) !important;
+      }
+      [data-testid="stExpander"] summary {
+        color: #ffffff !important;
+        background: rgba(17, 27, 45, .96) !important;
+        transition: background-color .16s ease, color .16s ease;
+      }
+      [data-testid="stExpander"] summary p,
+      [data-testid="stExpander"] summary span,
+      [data-testid="stExpander"] summary svg {
+        color: inherit !important;
+        fill: currentColor !important;
+        opacity: 1 !important;
+      }
+      [data-testid="stExpander"] details[open] > summary {
+        color: #050914 !important;
+        background: #ffffff !important;
+      }
+      [data-testid="stExpander"] summary:hover,
+      [data-testid="stExpander"] details[open] > summary:hover {
+        color: #ffffff !important;
+        background: #246bfe !important;
       }
       a {color: #77bbff;}
       footer {visibility: hidden;}
