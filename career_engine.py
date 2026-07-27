@@ -1250,6 +1250,219 @@ PROTOTYPES = {
     },
 }
 
+LEADERSHIP_PATHWAYS: dict[str, dict[str, Any]] = {
+    "data_bi_analyst": {
+        "title": "Data & Business Intelligence Leadership Pathway",
+        "summary": (
+            "Build from analytics delivery toward ownership of decision systems, "
+            "stakeholder alignment, data quality, and an analytics team or portfolio."
+        ),
+        "progression": (
+            "Senior Data/BI Analyst → Analytics or BI Lead → Analytics/BI Manager"
+        ),
+        "focus": (
+            "Move beyond producing dashboards: set metric definitions, prioritize "
+            "analysis, coach reviewers, and hold decision-makers to a shared evidence base."
+        ),
+        "proof": (
+            "Lead one cross-functional dashboard or metric-governance initiative. "
+            "Document the decision, contributors, review process, adoption result, "
+            "and what you changed after stakeholder feedback."
+        ),
+        "core_skills": ["data_analytics"],
+    },
+    "cybersecurity_analyst": {
+        "title": "Cybersecurity Leadership Pathway",
+        "summary": (
+            "Progress from security analysis toward incident leadership, control "
+            "ownership, risk communication, and accountable security operations."
+        ),
+        "progression": (
+            "Senior Cybersecurity Analyst → Security Operations Lead → "
+            "Cybersecurity Manager"
+        ),
+        "focus": (
+            "Build judgment under pressure, escalation discipline, control ownership, "
+            "and the ability to explain technical risk to business leaders."
+        ),
+        "proof": (
+            "Lead a tabletop incident exercise or control-improvement workstream. "
+            "Record the decision log, responsibilities, lessons learned, and verified "
+            "follow-through without exposing confidential security information."
+        ),
+        "core_skills": ["technology"],
+    },
+    "cloud_solutions_engineer": {
+        "title": "Cloud & Platform Engineering Leadership Pathway",
+        "summary": (
+            "Develop from technical delivery toward architecture decisions, service "
+            "reliability, engineering standards, and team enablement."
+        ),
+        "progression": (
+            "Senior Cloud Engineer → Cloud/Platform Technical Lead → "
+            "Cloud or Platform Engineering Manager"
+        ),
+        "focus": (
+            "Practice technical prioritization, architecture trade-offs, reliability "
+            "ownership, mentoring, and clear communication with nontechnical stakeholders."
+        ),
+        "proof": (
+            "Lead a small reliability, cost, or migration improvement. Publish a "
+            "sanitized decision record covering alternatives, risks, contributors, "
+            "measured results, and operational handoff."
+        ),
+        "core_skills": ["technology"],
+    },
+    "project_manager": {
+        "title": "Project & Program Leadership Pathway",
+        "summary": (
+            "Move toward accountable ownership of outcomes, cross-functional delivery, "
+            "risk decisions, and eventually a portfolio of related initiatives."
+        ),
+        "progression": (
+            "Project or Business Analyst → Project Manager → Program Manager"
+        ),
+        "focus": (
+            "Strengthen scope judgment, negotiation, risk escalation, benefits tracking, "
+            "and the ability to align people who do not report directly to you."
+        ),
+        "proof": (
+            "Own one bounded cross-functional initiative from charter through review. "
+            "Show the decision log, risks, stakeholder agreements, outcome measures, "
+            "and retrospective—not confidential project material."
+        ),
+        "core_skills": ["project_management", "communication"],
+    },
+    "digital_marketing_strategist": {
+        "title": "Digital Marketing Leadership Pathway",
+        "summary": (
+            "Progress from campaign execution toward portfolio strategy, experimentation "
+            "standards, commercial accountability, and creative-team direction."
+        ),
+        "progression": (
+            "Senior Digital Strategist → Growth or Marketing Lead → "
+            "Digital Marketing Manager"
+        ),
+        "focus": (
+            "Develop prioritization across channels, responsible experimentation, "
+            "budget judgment, coaching, and alignment with sales and customer teams."
+        ),
+        "proof": (
+            "Lead a multi-channel experiment with a written hypothesis, budget guardrails, "
+            "review roles, results, and a decision about what the team should stop, start, "
+            "or scale."
+        ),
+        "core_skills": ["creative_design", "communication"],
+    },
+    "people_analytics_specialist": {
+        "title": "People Analytics Leadership Pathway",
+        "summary": (
+            "Use workforce evidence as a foundation for leading responsible analytics, "
+            "workforce-planning decisions, stakeholder trust, and a people-insights team."
+        ),
+        "progression": (
+            "People Analytics Specialist → People Analytics Lead → "
+            "People Analytics Manager"
+        ),
+        "focus": (
+            "Build privacy judgment, ethical review, consulting skill, team coaching, "
+            "and the discipline to separate correlation from causal claims."
+        ),
+        "proof": (
+            "Lead an anonymized workforce-insight project with privacy safeguards, "
+            "bias checks, stakeholder review, a decision log, and a clearly measured "
+            "organizational outcome."
+        ),
+        "core_skills": ["people_hr", "data_analytics"],
+    },
+    "supply_chain_analyst": {
+        "title": "Supply Chain & Operations Leadership Pathway",
+        "summary": (
+            "Advance from analysis toward planning decisions, service-level trade-offs, "
+            "cross-functional operations, and accountable supply-chain leadership."
+        ),
+        "progression": (
+            "Senior Supply Chain Analyst → Planning or Operations Lead → "
+            "Supply Chain Manager"
+        ),
+        "focus": (
+            "Strengthen scenario judgment, supplier and stakeholder communication, "
+            "operating cadence, risk ownership, and continuous-improvement leadership."
+        ),
+        "proof": (
+            "Lead one inventory, service-level, or process-improvement cycle. Show the "
+            "baseline, trade-offs, contributors, decision, measured result, and control "
+            "used to sustain the change."
+        ),
+        "core_skills": ["operations"],
+    },
+    "fpa_analyst": {
+        "title": "FP&A Leadership Pathway",
+        "summary": (
+            "Build from forecasting and analysis toward business partnership, scenario "
+            "ownership, management challenge, and leadership of a planning function."
+        ),
+        "progression": (
+            "Senior FP&A Analyst or Finance Business Partner → FP&A Lead → FP&A Manager"
+        ),
+        "focus": (
+            "Develop commercial judgment, constructive challenge, planning governance, "
+            "executive communication, coaching, and accountability for assumptions."
+        ),
+        "proof": (
+            "Lead a driver-based planning or variance-review cycle. Document assumptions, "
+            "contributors, control checks, recommendations, leadership decisions, and "
+            "the result of the chosen action."
+        ),
+        "core_skills": ["finance", "data_analytics"],
+    },
+    "customer_experience_manager": {
+        "title": "Customer Experience Leadership Pathway",
+        "summary": (
+            "Lead customer evidence, service design, operating improvements, and the "
+            "human–AI handoff across customer-facing teams."
+        ),
+        "progression": (
+            "Customer Experience Specialist or Team Lead → Customer Experience Manager "
+            "→ Head of Customer Experience"
+        ),
+        "focus": (
+            "Strengthen journey-level prioritization, service recovery, coaching, "
+            "cross-functional influence, and accountability for customer outcomes."
+        ),
+        "proof": (
+            "Lead one customer-journey improvement from evidence to implementation. "
+            "Show the research, contributors, decision, operating change, customer "
+            "measure, and follow-up review."
+        ),
+        "core_skills": ["customer_experience", "communication"],
+    },
+    "ux_researcher": {
+        "title": "UX Research Leadership Pathway",
+        "summary": (
+            "Progress from individual research delivery toward research strategy, "
+            "quality standards, stakeholder influence, and team development."
+        ),
+        "progression": (
+            "Senior UX Researcher → UX Research Lead → UX Research Manager"
+        ),
+        "focus": (
+            "Build research-program prioritization, ethical practice, coaching, "
+            "cross-functional influence, and a consistent standard for evidence quality."
+        ),
+        "proof": (
+            "Lead a multi-stakeholder research initiative with a documented research "
+            "decision, participant safeguards, review roles, product response, and "
+            "evidence of what changed."
+        ),
+        "core_skills": [
+            "creative_design",
+            "communication",
+            "customer_experience",
+        ],
+    },
+}
+
 
 def _clip_present_rating(value: float) -> int:
     return int(np.clip(np.rint(value), 1, 5))
@@ -1356,6 +1569,88 @@ def _one_hot_encoder() -> OneHotEncoder:
         return OneHotEncoder(handle_unknown="ignore", sparse=False)
 
 
+def leadership_readiness_for(
+    profile: dict[str, Any],
+    skill_fit: float,
+) -> float:
+    """Return a transparent, synthetic leadership-readiness index."""
+
+    experience_signal = min(float(profile["years_experience"]) / 8, 1.0)
+    formal_leadership_signal = min(float(profile["leadership_years"]) / 3, 1.0)
+    transferable_signal = (
+        0.40 * float(profile["communication"]) / 5
+        + 0.35 * float(profile["project_management"]) / 5
+        + 0.25 * float(profile["people_hr"]) / 5
+    )
+    general_readiness = (
+        0.20 * experience_signal
+        + 0.45 * formal_leadership_signal
+        + 0.35 * transferable_signal
+    )
+    return float(np.clip(0.75 * general_readiness + 0.25 * skill_fit, 0, 1))
+
+
+def leadership_stage_for(
+    profile: dict[str, Any],
+    readiness: float,
+) -> dict[str, str]:
+    """Describe an investigation stage without claiming promotion readiness."""
+
+    leadership_years = float(profile["leadership_years"])
+    if leadership_years >= 3 and readiness >= 0.72:
+        return {
+            "label": "Investigate manager-level opportunities",
+            "insight": (
+                "Your profile shows sustained leadership exposure and stronger "
+                "transferable signals. Validate scope, people responsibility, and "
+                "decision authority against current job descriptions and references."
+            ),
+        }
+    if leadership_years >= 1 and readiness >= 0.55:
+        return {
+            "label": "Investigate lead or senior-lead opportunities",
+            "insight": (
+                "Your profile suggests a bridge through workstream ownership, mentoring, "
+                "or a formal lead role before assuming full manager accountability."
+            ),
+        }
+    return {
+        "label": "Build a leadership bridge first",
+        "insight": (
+            "The selected direction is leadership, but the profile does not yet show "
+            "enough sustained leadership evidence for this prototype to imply immediate "
+            "manager readiness. Build proof through a bounded initiative, mentoring, "
+            "decision ownership, and measurable team or stakeholder outcomes."
+        ),
+    }
+
+
+def leadership_gaps_for(
+    profile: dict[str, Any],
+    limit: int = 3,
+) -> list[dict[str, Any]]:
+    """Prioritize transparent leadership-building targets for this teaching tool."""
+
+    targets = {
+        "communication": 4,
+        "project_management": 4,
+        "people_hr": 3,
+        "operations": 3,
+    }
+    gaps = [
+        {
+            "skill": skill,
+            "label": SKILLS[skill]["label"],
+            "current": float(profile[skill]),
+            "target": target,
+            "gap": target - float(profile[skill]),
+        }
+        for skill, target in targets.items()
+        if target - float(profile[skill]) > 0
+    ]
+    return sorted(gaps, key=lambda item: item["gap"], reverse=True)[:limit]
+
+
 @dataclass
 class CareerEngine:
     model: Pipeline
@@ -1442,14 +1737,27 @@ class CareerEngine:
                 else 0.35
             )
 
+            is_leadership_goal = profile["goal"] == "leadership"
+            leadership_readiness = leadership_readiness_for(profile, skill_fit)
+            leadership_pathway_definition = LEADERSHIP_PATHWAYS[str(career_id)]
+            core_skill_fit = float(
+                np.mean(
+                    [
+                        float(profile[skill]) / 5
+                        for skill in leadership_pathway_definition["core_skills"]
+                    ]
+                )
+            )
+            career_direction_fit = (
+                0.35 * role_fit
+                + 0.15 * industry_fit
+                + 0.20 * float(skill_fit)
+                + 0.20 * core_skill_fit
+                + 0.10 * leadership_readiness
+            )
+
             goal_adjustment = 0.0
-            if (
-                profile["goal"] == "leadership"
-                and career_id
-                in {"project_manager", "customer_experience_manager"}
-            ):
-                goal_adjustment = 0.03
-            elif profile["goal"] == "future_ready":
+            if profile["goal"] == "future_ready":
                 goal_adjustment = max(
                     0.0,
                     future["score"] - current["score"],
@@ -1457,22 +1765,54 @@ class CareerEngine:
             elif profile["goal"] == "sector_switch" and industry_fit < 1:
                 goal_adjustment = future["score"] * 0.03
 
-            score = 100 * min(
-                1.0,
-                0.42 * float(model_probability)
-                + 0.20 * float(skill_fit)
-                + 0.05 * experience_fit
-                + 0.14 * role_fit
-                + 0.05 * current["score"]
-                + 0.07 * future["score"]
-                + 0.04 * industry_fit
-                + goal_adjustment,
+            if is_leadership_goal:
+                # Leadership is a direction-selection policy, not a synthetic
+                # promotion prediction. Career-direction fit carries 30% so the
+                # selected goal materially affects ranking and presentation.
+                score = 100 * min(
+                    1.0,
+                    0.25 * float(model_probability)
+                    + 0.15 * float(skill_fit)
+                    + 0.10 * role_fit
+                    + 0.06 * experience_fit
+                    + 0.04 * current["score"]
+                    + 0.06 * future["score"]
+                    + 0.04 * industry_fit
+                    + 0.30 * career_direction_fit,
+                )
+            else:
+                score = 100 * min(
+                    1.0,
+                    0.42 * float(model_probability)
+                    + 0.20 * float(skill_fit)
+                    + 0.05 * experience_fit
+                    + 0.14 * role_fit
+                    + 0.05 * current["score"]
+                    + 0.07 * future["score"]
+                    + 0.04 * industry_fit
+                    + goal_adjustment,
+                )
+
+            leadership_pathway = (
+                leadership_pathway_definition
+                if is_leadership_goal
+                else None
             )
             results.append(
                 {
                     "career_id": str(career_id),
                     "career": career["title"],
                     "summary": career["summary"],
+                    "display_career": (
+                        leadership_pathway["title"]
+                        if leadership_pathway
+                        else career["title"]
+                    ),
+                    "display_summary": (
+                        leadership_pathway["summary"]
+                        if leadership_pathway
+                        else career["summary"]
+                    ),
                     "recommendation_score": round(score, 1),
                     "synthetic_model_fit": round(
                         100 * float(model_probability),
@@ -1482,6 +1822,27 @@ class CareerEngine:
                     "experience_fit": round(100 * experience_fit, 1),
                     "industry_fit": round(100 * industry_fit, 1),
                     "role_fit": round(100 * role_fit, 1),
+                    "career_direction_fit": round(
+                        100 * career_direction_fit,
+                        1,
+                    ),
+                    "core_skill_fit": round(100 * core_skill_fit, 1),
+                    "leadership_readiness": round(
+                        100 * leadership_readiness,
+                        1,
+                    ),
+                    "leadership_stage": (
+                        leadership_stage_for(profile, leadership_readiness)
+                        if is_leadership_goal
+                        else None
+                    ),
+                    "leadership_pathway": leadership_pathway,
+                    "leadership_gaps": (
+                        leadership_gaps_for(profile)
+                        if is_leadership_goal
+                        else []
+                    ),
+                    "goal": profile["goal"],
                     "skill_gaps": skill_gaps_for(profile, str(career_id)),
                     **career,
                 }

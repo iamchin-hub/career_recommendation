@@ -21,7 +21,7 @@ from career_engine import (
     CareerEngine,
 )
 
-APP_BUILD_ID = "2026.07.28-zero-skill-v2"
+APP_BUILD_ID = "2026.07.28-leadership-direction-v3"
 ENGINE_CACHE_KEY = f"{DATASET_VERSION}:{APP_BUILD_ID}"
 
 
@@ -512,22 +512,57 @@ def source_links(source_keys: list[str]) -> None:
 
 
 def render_recommendation(result: dict, rank: int) -> None:
+    is_leadership_pathway = result.get("leadership_pathway") is not None
     st.markdown(
         f"""
         <div class="role-head">
           <span class="eyebrow">Recommendation {rank}</span>
-          <h3>{result["career"]}</h3>
-          <p>{result["summary"]}</p>
+          <h3>{result["display_career"]}</h3>
+          <p>{result["display_summary"]}</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    score_col, model_col, skill_col, role_col = st.columns(4)
-    score_col.metric("Comparative score", f"{result['recommendation_score']:.1f}/100")
-    model_col.metric("Synthetic model fit", f"{result['synthetic_model_fit']:.1f}%")
-    skill_col.metric("Skill fit index", f"{result['skill_fit']:.1f}%")
-    role_col.metric("Current-role relevance", f"{result['role_fit']:.1f}%")
+    score_col, second_col, third_col, role_col = st.columns(4)
+    score_col.metric(
+        "Comparative score",
+        f"{result['recommendation_score']:.1f}/100",
+    )
+    if is_leadership_pathway:
+        second_col.metric(
+            "Career-direction fit",
+            f"{result['career_direction_fit']:.1f}%",
+        )
+        third_col.metric(
+            "Leadership-readiness index",
+            f"{result['leadership_readiness']:.1f}%",
+        )
+        role_col.metric(
+            "Current-role relevance",
+            f"{result['role_fit']:.1f}%",
+        )
+        st.caption(
+            f"Underlying domain signals: synthetic model fit "
+            f"{result['synthetic_model_fit']:.1f}% · skill fit "
+            f"{result['skill_fit']:.1f}% · core-skill foundation "
+            f"{result['core_skill_fit']:.1f}%. Leadership readiness and "
+            "career-direction fit are transparent teaching indices—not promotion "
+            "probabilities."
+        )
+    else:
+        second_col.metric(
+            "Synthetic model fit",
+            f"{result['synthetic_model_fit']:.1f}%",
+        )
+        third_col.metric(
+            "Skill fit index",
+            f"{result['skill_fit']:.1f}%",
+        )
+        role_col.metric(
+            "Current-role relevance",
+            f"{result['role_fit']:.1f}%",
+        )
     st.caption(
         "These are ranking indices—not probabilities of getting hired, succeeding, "
         "or earning a particular salary."
@@ -538,6 +573,28 @@ def render_recommendation(result: dict, rank: int) -> None:
     )
 
     with overview_tab:
+        if is_leadership_pathway:
+            pathway = result["leadership_pathway"]
+            stage = result["leadership_stage"]
+            st.subheader("Career-direction fit")
+            st.markdown(f"**Suggested investigation stage: {stage['label']}**")
+            st.write(stage["insight"])
+            st.markdown(f"**Illustrative progression:** {pathway['progression']}")
+            st.markdown(f"**Leadership focus:** {pathway['focus']}")
+            core_skill_labels = ", ".join(
+                SKILLS[skill]["label"] for skill in pathway["core_skills"]
+            )
+            st.markdown(
+                f"**Core domain foundation considered:** {core_skill_labels} "
+                f"({result['core_skill_fit']:.1f}%)"
+            )
+            st.info(
+                "This progression is a direction to investigate—not a universal "
+                "promotion ladder, an open-vacancy claim, or evidence that you are "
+                "ready for the final title today."
+            )
+            st.divider()
+
         current_col, future_col = st.columns(2)
         with current_col:
             st.subheader("Current demand")
@@ -563,10 +620,39 @@ def render_recommendation(result: dict, rank: int) -> None:
         st.write(result["ai_opportunity"])
         st.subheader("The human advantage")
         st.write(result["human_edge"])
-        st.subheader("A practical portfolio proof")
-        st.info(result["first_proof"])
+        if is_leadership_pathway:
+            st.subheader("A leadership proof to build")
+            st.info(result["leadership_pathway"]["proof"])
+            st.caption(
+                "Use sanitized or synthetic material. Do not disclose employer, "
+                "employee, customer, financial, or security-sensitive information."
+            )
+        else:
+            st.subheader("A practical portfolio proof")
+            st.info(result["first_proof"])
 
     with skills_tab:
+        if is_leadership_pathway:
+            st.subheader("Leadership-building priorities")
+            if result["leadership_gaps"]:
+                for gap in result["leadership_gaps"]:
+                    st.markdown(
+                        f"- **{gap['label']}** — your rating "
+                        f"{gap['current']:g}/5; prototype leadership target "
+                        f"{gap['target']}/5"
+                    )
+            else:
+                st.success(
+                    "Your self-ratings meet this prototype's transferable leadership "
+                    "targets. Validate them with observed work outcomes and feedback."
+                )
+            st.caption(
+                "These targets are transparent design assumptions for this teaching "
+                "tool—not employer requirements, occupational standards, or proof of "
+                "manager readiness."
+            )
+            st.divider()
+
         st.subheader("Priority gaps against the demo target")
         if result["skill_gaps"]:
             for gap in result["skill_gaps"]:
@@ -586,6 +672,12 @@ def render_recommendation(result: dict, rank: int) -> None:
 
     with credential_tab:
         credential = result["certification"]
+        if is_leadership_pathway:
+            st.info(
+                "This credential supports technical or domain credibility for the "
+                "pathway. It does not certify leadership ability or guarantee a "
+                "lead, manager, or promotion outcome."
+            )
         st.subheader(credential["name"])
         st.markdown(f"**Official provider:** {credential['issuer']}")
         st.write(credential["why_it_fits"])
@@ -892,11 +984,12 @@ with input_tab:
                 "Profile signal used: "
                 f"{saved_profile['current_job_title']} · "
                 f"{CURRENT_ROLES[saved_profile['current_role']]['label']} · "
-                f"{INDUSTRIES[saved_profile['current_industry']]}"
+                f"{INDUSTRIES[saved_profile['current_industry']]} · Goal: "
+                f"{CAREER_GOALS[saved_profile['goal']]}"
             )
         recommendation_tabs = st.tabs(
             [
-                f"{rank}. {item['career']}"
+                f"{rank}. {item['display_career']}"
                 for rank, item in enumerate(
                     st.session_state["recommendations"],
                     start=1,
@@ -935,6 +1028,25 @@ with method_tab:
         - future-demand evidence grade: **7%**
         - industry adjacency: **4%**
         - goal adjustment: **up to 3%**
+
+        When **Move toward leadership** is selected, the app uses a separate,
+        explicit policy so the goal is not a minor tie-breaker:
+
+        - career-direction fit: **30%**
+        - synthetic domain-model fit: **25%**
+        - direct domain-skill fit: **15%**
+        - current-role relevance: **10%**
+        - experience fit: **6%**
+        - current- and future-demand evidence: **10% combined**
+        - industry adjacency: **4%**
+
+        Career-direction fit combines role adjacency, industry adjacency, overall
+        domain-skill fit, career-specific core skills, and a leadership-readiness
+        index. This prevents a nearby job title from outweighing a self-reported
+        absence of the pathway's core skill. The readiness index uses total
+        experience, leadership experience, communication, project delivery, people
+        skills, and domain fit. These are declared design assumptions—not a
+        validated promotion model.
         """
     )
     st.info(
