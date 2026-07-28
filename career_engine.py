@@ -25,6 +25,21 @@ EVIDENCE_CHECKED = "28 July 2026"
 MODEL_NAME = "Extra Trees"
 SYNTHETIC_CV_MACRO_F1 = 0.7854
 SYNTHETIC_CV_ACCURACY = 0.7868
+RANKING_WEIGHTS = {
+    "skill_alignment": 0.50,
+    "core_skill_coverage": 0.15,
+    "synthetic_model_fit": 0.15,
+    "experience_proximity": 0.08,
+    "current_demand_evidence": 0.05,
+    "future_demand_evidence": 0.07,
+}
+SUPPORT_THRESHOLDS = {
+    "skill_alignment": 40.0,
+    "core_skill_coverage": 25.0,
+    "recommendation_score": 55.0,
+}
+
+assert abs(sum(RANKING_WEIGHTS.values()) - 1.0) < 1e-9
 
 # Retained only as a migration reference for profiles created before the
 # skills-first v5 schema. None of these legacy fields enter model training or
@@ -344,7 +359,7 @@ SOURCES = {
         "name": "Jobs and Labor Market Forecast",
         "owner": "DOLE Bureau of Local Employment",
         "url": "https://ble.dole.gov.ph/jobs-and-labor-market-forecast/",
-        "published": "2023–2025 release",
+        "published": "2023–2024 update; checked 28 July 2026",
     },
     "tesda_5ir": {
         "name": "TVET Skills Insights: 5th Industrial Revolution",
@@ -356,19 +371,19 @@ SOURCES = {
         "name": "Future of Jobs 2025 — Jobs Outlook",
         "owner": "World Economic Forum",
         "url": "https://www.weforum.org/publications/the-future-of-jobs-report-2025/in-full/2-jobs-outlook/",
-        "published": "8 January 2025",
+        "published": "7 January 2025",
     },
     "wef_skills": {
         "name": "Future of Jobs 2025 — Skills Outlook",
         "owner": "World Economic Forum",
         "url": "https://www.weforum.org/publications/the-future-of-jobs-report-2025/in-full/3-skills-outlook/",
-        "published": "8 January 2025",
+        "published": "7 January 2025",
     },
     "wef_industry": {
         "name": "Future of Jobs 2025 — Industry Insights",
         "owner": "World Economic Forum",
         "url": "https://www.weforum.org/publications/the-future-of-jobs-report-2025/in-full/5-region-economy-and-industry-insights/",
-        "published": "8 January 2025",
+        "published": "7 January 2025",
     },
     "ilo_genai": {
         "name": "Generative AI and Jobs: A Refined Global Index",
@@ -2878,12 +2893,16 @@ class CareerEngine:
                 + 0.25 * ai_skill_coverage
             )
             score = 100 * (
-                0.50 * skill_alignment
-                + 0.15 * core_skill_coverage
-                + 0.15 * float(model_probability)
-                + 0.08 * experience_fit
-                + 0.05 * float(current["score"])
-                + 0.07 * float(future["score"])
+                RANKING_WEIGHTS["skill_alignment"] * skill_alignment
+                + RANKING_WEIGHTS["core_skill_coverage"]
+                * core_skill_coverage
+                + RANKING_WEIGHTS["synthetic_model_fit"]
+                * float(model_probability)
+                + RANKING_WEIGHTS["experience_proximity"] * experience_fit
+                + RANKING_WEIGHTS["current_demand_evidence"]
+                * float(current["score"])
+                + RANKING_WEIGHTS["future_demand_evidence"]
+                * float(future["score"])
             )
             learning_options = list(LEARNING_OPTIONS[career_id])
             if not any(
@@ -2937,9 +2956,12 @@ class CareerEngine:
         supported = [
             item
             for item in ranked
-            if item["skill_alignment"] >= 40
-            and item["core_skill_coverage"] >= 25
-            and item["recommendation_score"] >= 55
+            if item["skill_alignment"]
+            >= SUPPORT_THRESHOLDS["skill_alignment"]
+            and item["core_skill_coverage"]
+            >= SUPPORT_THRESHOLDS["core_skill_coverage"]
+            and item["recommendation_score"]
+            >= SUPPORT_THRESHOLDS["recommendation_score"]
         ]
         if not supported:
             positive_skill_count = sum(

@@ -41,6 +41,17 @@ python3 -m pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
+The Streamlit entrypoint registers three separate pages:
+
+- `/` — Career scan and recommendation results;
+- `/method` — the current model, ranking, benchmark, and limitations; and
+- `/evidence` — the dated research and official-source registry.
+
+The Method page reads the weights, thresholds, model metrics, feature counts,
+and dataset version from the same Python constants used by the recommender. The
+Evidence page renders the same `SOURCES` registry referenced by recommendation
+explanations, so neither page maintains a separate copy that can silently drift.
+
 ## Model and evidence controls
 
 - The dataset has 200 synthetic profiles for each of 11 job families.
